@@ -1,11 +1,14 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/meeting_model.dart';
+import 'storage_service.dart';
 
 class AppointmentService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final StorageService _storageService = StorageService();
 
   // Mendapatkan semua janji temu untuk pengguna saat ini (mahasiswa atau dosen)
   Stream<List<MeetingModel>> getAppointments() {
@@ -168,14 +171,14 @@ class AppointmentService {
 
   // Memeriksa apakah ada jadwal yang bentrok
   Future<bool> hasConflictingAppointment(
-    String userId, 
-    DateTime dateTime,
-    {bool isLecturer = false}
-  ) async {
+    String userId,
+    DateTime dateTime, {
+    bool isLecturer = false,
+  }) async {
     // Tentukan rentang waktu untuk memeriksa bentrok (1 jam)
     final DateTime startTime = dateTime;
     final DateTime endTime = dateTime.add(const Duration(hours: 1));
-    
+
     // Query untuk memeriksa jadwal yang bentrok
     Query query;
     if (isLecturer) {
@@ -189,21 +192,24 @@ class AppointmentService {
           .where('studentId', isEqualTo: userId)
           .where('status', whereIn: ['pending', 'approved', 'checked-in']);
     }
-    
+
     final snapshot = await query.get();
-    
+
     // Periksa apakah ada jadwal yang bentrok
     for (var doc in snapshot.docs) {
       final appointmentData = doc.data() as Map<String, dynamic>;
-      final appointmentDateTime = (appointmentData['dateTime'] as Timestamp).toDate();
-      
+      final appointmentDateTime =
+          (appointmentData['dateTime'] as Timestamp).toDate();
+
       // Jadwal bentrok jika berada dalam rentang waktu yang sama
-      if (appointmentDateTime.isAfter(startTime.subtract(const Duration(hours: 1))) && 
+      if (appointmentDateTime.isAfter(
+            startTime.subtract(const Duration(hours: 1)),
+          ) &&
           appointmentDateTime.isBefore(endTime)) {
         return true; // Ada jadwal yang bentrok
       }
     }
-    
+
     return false; // Tidak ada jadwal yang bentrok
   }
 
@@ -224,15 +230,26 @@ class AppointmentService {
     }
 
     // Periksa apakah mahasiswa sudah memiliki jadwal di waktu yang sama
-    final bool studentHasConflict = await hasConflictingAppointment(user.uid, dateTime);
+    final bool studentHasConflict = await hasConflictingAppointment(
+      user.uid,
+      dateTime,
+    );
     if (studentHasConflict) {
-      throw Exception('Anda sudah memiliki jadwal bimbingan di waktu yang sama');
+      throw Exception(
+        'Anda sudah memiliki jadwal bimbingan di waktu yang sama',
+      );
     }
-    
+
     // Periksa apakah dosen sudah memiliki jadwal di waktu yang sama
-    final bool lecturerHasConflict = await hasConflictingAppointment(lecturerId, dateTime, isLecturer: true);
+    final bool lecturerHasConflict = await hasConflictingAppointment(
+      lecturerId,
+      dateTime,
+      isLecturer: true,
+    );
     if (lecturerHasConflict) {
-      throw Exception('Dosen sudah memiliki jadwal bimbingan di waktu yang sama');
+      throw Exception(
+        'Dosen sudah memiliki jadwal bimbingan di waktu yang sama',
+      );
     }
 
     // Dapatkan data mahasiswa
@@ -278,19 +295,31 @@ class AppointmentService {
     }
 
     // Periksa apakah dosen sudah memiliki jadwal di waktu yang sama
-    final bool lecturerHasConflict = await hasConflictingAppointment(user.uid, dateTime, isLecturer: true);
+    final bool lecturerHasConflict = await hasConflictingAppointment(
+      user.uid,
+      dateTime,
+      isLecturer: true,
+    );
     if (lecturerHasConflict) {
-      throw Exception('Anda sudah memiliki jadwal bimbingan di waktu yang sama');
+      throw Exception(
+        'Anda sudah memiliki jadwal bimbingan di waktu yang sama',
+      );
     }
-    
+
     // Periksa apakah mahasiswa sudah memiliki jadwal di waktu yang sama
-    final bool studentHasConflict = await hasConflictingAppointment(studentId, dateTime);
+    final bool studentHasConflict = await hasConflictingAppointment(
+      studentId,
+      dateTime,
+    );
     if (studentHasConflict) {
-      throw Exception('Mahasiswa sudah memiliki jadwal bimbingan di waktu yang sama');
+      throw Exception(
+        'Mahasiswa sudah memiliki jadwal bimbingan di waktu yang sama',
+      );
     }
 
     // Dapatkan data dosen
-    final lecturerDoc = await _firestore.collection('users').doc(user.uid).get();
+    final lecturerDoc =
+        await _firestore.collection('users').doc(user.uid).get();
     if (!lecturerDoc.exists) {
       throw Exception('Lecturer data not found');
     }
@@ -394,8 +423,9 @@ class AppointmentService {
   Future<bool> checkInAppointment(
     String appointmentId,
     double currentLatitude,
-    double currentLongitude,
-  ) async {
+    double currentLongitude, {
+    File? attendancePhoto,
+  }) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw Exception('User not authenticated');
@@ -411,7 +441,9 @@ class AppointmentService {
     final appointmentData = appointmentDoc.data() as Map<String, dynamic>;
 
     // Check if the appointment is approved
-    if (appointmentData['status'] != 'approved') {
+    if (appointmentData['status'] == 'completed') {
+      throw Exception('Appointment is already completed');
+    } else if (appointmentData['status'] != 'approved') {
       throw Exception('Appointment is not approved');
     }
 
@@ -419,22 +451,24 @@ class AppointmentService {
     if (appointmentData['studentId'] != user.uid) {
       throw Exception('This appointment does not belong to you');
     }
-    
+
     // Validasi waktu check-in
-    final DateTime appointmentTime = (appointmentData['dateTime'] as Timestamp).toDate();
+    final DateTime appointmentTime =
+        (appointmentData['dateTime'] as Timestamp).toDate();
     final DateTime now = DateTime.now();
-    
-    // Hanya boleh check-in 15 menit sebelum hingga 15 menit setelah waktu janji
-    final DateTime earliestCheckIn = appointmentTime.subtract(const Duration(minutes: 15));
-    final DateTime latestCheckIn = appointmentTime.add(const Duration(minutes: 15));
-    
+
+    // Boleh check-in 15 menit sebelum waktu janji hingga janji selesai
+    final DateTime earliestCheckIn = appointmentTime.subtract(
+      const Duration(minutes: 15),
+    );
+
     if (now.isBefore(earliestCheckIn)) {
-      throw Exception('Terlalu dini untuk check-in. Anda dapat check-in 15 menit sebelum waktu janji.');
+      throw Exception(
+        'Terlalu dini untuk check-in. Anda dapat check-in 15 menit sebelum waktu janji.',
+      );
     }
-    
-    if (now.isAfter(latestCheckIn)) {
-      throw Exception('Waktu check-in telah berakhir. Batas check-in adalah 15 menit setelah waktu janji.');
-    }
+
+    // Tidak perlu validasi batas akhir check-in karena bisa check-in sampai janji selesai
 
     // Check if the appointment has location data
     final double? appointmentLatitude =
@@ -462,13 +496,37 @@ class AppointmentService {
     final bool isNearby = distance <= 100; // 100 meters radius
 
     if (isNearby) {
-      // Update appointment status to 'checked-in'
-      await _firestore.collection('appointments').doc(appointmentId).update({
+      // Prepare update data
+      final Map<String, dynamic> updateData = {
         'status': 'checked-in',
         'checkedInAt': FieldValue.serverTimestamp(),
         'checkedInLatitude': currentLatitude,
         'checkedInLongitude': currentLongitude,
-      });
+      };
+
+      // Upload attendance photo if provided
+      if (attendancePhoto != null) {
+        try {
+          // Upload photo to Firebase Storage
+          final String photoUrl = await _storageService.uploadAttendancePhoto(
+            attendancePhoto,
+            appointmentId,
+          );
+
+          // Add photo URL and timestamp to update data
+          updateData['attendancePhotoUrl'] = photoUrl;
+          updateData['attendancePhotoTimestamp'] = FieldValue.serverTimestamp();
+        } catch (e) {
+          // If photo upload fails, continue with check-in but log the error
+          print('Failed to upload attendance photo: $e');
+        }
+      }
+
+      // Update appointment status to 'checked-in'
+      await _firestore
+          .collection('appointments')
+          .doc(appointmentId)
+          .update(updateData);
       return true;
     } else {
       // Not close enough to check in
@@ -512,7 +570,7 @@ class AppointmentService {
     }
 
     // Get the appointment
-    final appointmentDoc = 
+    final appointmentDoc =
         await _firestore.collection('appointments').doc(appointmentId).get();
     if (!appointmentDoc.exists) {
       throw Exception('Appointment not found');
@@ -536,8 +594,32 @@ class AppointmentService {
       'completedAt': FieldValue.serverTimestamp(),
     });
   }
+
+  // Menghapus janji temu (hanya bisa dilakukan oleh dosen)
+  Future<void> deleteAppointment(String appointmentId) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    // Get the appointment
+    final appointmentDoc =
+        await _firestore.collection('appointments').doc(appointmentId).get();
+    if (!appointmentDoc.exists) {
+      throw Exception('Appointment not found');
+    }
+
+    final appointmentData = appointmentDoc.data() as Map<String, dynamic>;
+
+    // Hanya dosen yang bisa menghapus janji temu
+    if (appointmentData['lecturerId'] != user.uid) {
+      throw Exception('Only lecturers can delete appointments');
+    }
+
+    // Tidak perlu menghapus foto kehadiran karena disimpan di Firestore
+    // dan akan dihapus bersama dengan dokumen appointment
+
+    // Hapus dokumen janji temu
+    await _firestore.collection('appointments').doc(appointmentId).delete();
+  }
 }
-
-
-
-

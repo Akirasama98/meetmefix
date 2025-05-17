@@ -14,6 +14,10 @@ class MeetingModel {
   final DateTime? createdAt; // Waktu pembuatan
   double? latitude; // Koordinat latitude lokasi
   double? longitude; // Koordinat longitude lokasi
+  String? attendancePhotoUrl; // URL foto kehadiran
+  DateTime? attendancePhotoTimestamp; // Waktu pengambilan foto kehadiran
+  DateTime? checkedInAt; // Waktu check-in
+  DateTime? completedAt; // Waktu selesai bimbingan
 
   MeetingModel({
     required this.id,
@@ -29,6 +33,10 @@ class MeetingModel {
     this.createdAt,
     this.latitude,
     this.longitude,
+    this.attendancePhotoUrl,
+    this.attendancePhotoTimestamp,
+    this.checkedInAt,
+    this.completedAt,
   });
 
   // Konversi dari Firestore document ke MeetingModel
@@ -45,6 +53,25 @@ class MeetingModel {
     DateTime? createdAt;
     if (map['createdAt'] is Timestamp) {
       createdAt = (map['createdAt'] as Timestamp).toDate();
+    }
+
+    // Konversi attendancePhotoTimestamp
+    DateTime? attendancePhotoTimestamp;
+    if (map['attendancePhotoTimestamp'] is Timestamp) {
+      attendancePhotoTimestamp =
+          (map['attendancePhotoTimestamp'] as Timestamp).toDate();
+    }
+
+    // Konversi checkedInAt
+    DateTime? checkedInAt;
+    if (map['checkedInAt'] is Timestamp) {
+      checkedInAt = (map['checkedInAt'] as Timestamp).toDate();
+    }
+
+    // Konversi completedAt
+    DateTime? completedAt;
+    if (map['completedAt'] is Timestamp) {
+      completedAt = (map['completedAt'] as Timestamp).toDate();
     }
 
     return MeetingModel(
@@ -65,6 +92,10 @@ class MeetingModel {
           map['longitude'] != null
               ? (map['longitude'] as num).toDouble()
               : null,
+      attendancePhotoUrl: map['attendancePhotoUrl'],
+      attendancePhotoTimestamp: attendancePhotoTimestamp,
+      checkedInAt: checkedInAt,
+      completedAt: completedAt,
     );
   }
 
@@ -82,6 +113,15 @@ class MeetingModel {
       'studentName': studentName,
       'latitude': latitude,
       'longitude': longitude,
+      'attendancePhotoUrl': attendancePhotoUrl,
+      'attendancePhotoTimestamp':
+          attendancePhotoTimestamp != null
+              ? Timestamp.fromDate(attendancePhotoTimestamp!)
+              : null,
+      'checkedInAt':
+          checkedInAt != null ? Timestamp.fromDate(checkedInAt!) : null,
+      'completedAt':
+          completedAt != null ? Timestamp.fromDate(completedAt!) : null,
       'createdAt':
           createdAt != null
               ? Timestamp.fromDate(createdAt!)

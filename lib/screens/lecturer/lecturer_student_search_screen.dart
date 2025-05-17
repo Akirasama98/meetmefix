@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/lecturer_model.dart';
-import '../providers/auth_provider.dart';
-import '../services/chat_service.dart';
-import 'chat_detail_screen.dart';
+import '../../models/user_model.dart';
+import '../../services/chat_service.dart';
+import 'lecturer_chat_detail_screen.dart';
 
-class LecturerListScreen extends StatefulWidget {
-  const LecturerListScreen({super.key});
+class LecturerStudentSearchScreen extends StatefulWidget {
+  const LecturerStudentSearchScreen({super.key});
 
   @override
-  State<LecturerListScreen> createState() => _LecturerListScreenState();
+  State<LecturerStudentSearchScreen> createState() =>
+      _LecturerStudentSearchScreenState();
 }
 
-class _LecturerListScreenState extends State<LecturerListScreen> {
+class _LecturerStudentSearchScreenState
+    extends State<LecturerStudentSearchScreen> {
   final ChatService _chatService = ChatService();
-  List<LecturerModel> _lecturers = [];
+  List<UserModel> _students = [];
   bool _isLoading = true;
 
   // Controller untuk pencarian
@@ -24,24 +24,22 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLecturers();
+    _loadStudents();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    // Update status user menjadi offline saat keluar dari halaman
-    _chatService.updateUserStatus(false);
     super.dispose();
   }
 
-  void _loadLecturers() {
-    // Menggunakan ChatService untuk mendapatkan daftar dosen
-    _chatService.getLecturers().listen(
-      (lecturers) {
+  void _loadStudents() {
+    // Menggunakan ChatService untuk mendapatkan daftar mahasiswa
+    _chatService.getStudents().listen(
+      (students) {
         if (mounted) {
           setState(() {
-            _lecturers = lecturers;
+            _students = students;
             _isLoading = false;
           });
         }
@@ -53,28 +51,28 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error loading lecturers: $error'),
+              content: Text('Error loading students: $error'),
               backgroundColor: Colors.red,
             ),
           );
         }
       },
     );
-
-    // Update status user menjadi online
-    _chatService.updateUserStatus(true);
   }
 
-  // Filter dosen berdasarkan pencarian
-  List<LecturerModel> get _filteredLecturers {
+  // Filter mahasiswa berdasarkan pencarian
+  List<UserModel> get _filteredStudents {
     if (_searchQuery.isEmpty) {
-      return _lecturers;
+      return _students;
     }
-    return _lecturers.where((lecturer) {
-      return lecturer.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          lecturer.department.toLowerCase().contains(
-            _searchQuery.toLowerCase(),
-          );
+    return _students.where((student) {
+      return student.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (student.nim?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+              false) ||
+          (student.department?.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ??
+              false);
     }).toList();
   }
 
@@ -82,15 +80,8 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cari Dosen'),
+        title: const Text('Cari Mahasiswa'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadLecturers,
-            tooltip: 'Refresh',
-          ),
-        ],
       ),
       body:
           _isLoading
@@ -103,7 +94,7 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Cari dosen...',
+                        hintText: 'Cari mahasiswa...',
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -121,10 +112,10 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
                     ),
                   ),
 
-                  // Daftar Dosen
+                  // Daftar Mahasiswa
                   Expanded(
                     child:
-                        _lecturers.isEmpty
+                        _students.isEmpty
                             ? Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -136,26 +127,21 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Tidak ada dosen yang tersedia',
+                                    'Tidak ada mahasiswa yang tersedia',
                                     style: TextStyle(
                                       fontSize: 16,
                                       color: Colors.grey.shade600,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  ElevatedButton.icon(
-                                    onPressed: _loadLecturers,
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Refresh'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF5BBFCB),
-                                      foregroundColor: Colors.white,
-                                    ),
+                                  ElevatedButton(
+                                    onPressed: _loadStudents,
+                                    child: const Text('Refresh'),
                                   ),
                                 ],
                               ),
                             )
-                            : _filteredLecturers.isEmpty
+                            : _filteredStudents.isEmpty
                             ? Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -167,30 +153,21 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Tidak ada dosen yang ditemukan',
+                                    'Tidak ada mahasiswa yang ditemukan',
                                     style: TextStyle(
                                       fontSize: 16,
                                       color: Colors.grey.shade600,
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Coba gunakan kata kunci lain',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                    textAlign: TextAlign.center,
                                   ),
                                 ],
                               ),
                             )
                             : ListView.builder(
                               padding: const EdgeInsets.only(bottom: 16),
-                              itemCount: _filteredLecturers.length,
+                              itemCount: _filteredStudents.length,
                               itemBuilder: (context, index) {
-                                final lecturer = _filteredLecturers[index];
-                                return _buildLecturerItem(lecturer);
+                                final student = _filteredStudents[index];
+                                return _buildStudentItem(student);
                               },
                             ),
                   ),
@@ -199,39 +176,28 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
     );
   }
 
-  Widget _buildLecturerItem(LecturerModel lecturer) {
-    // Warna status
-    Color statusColor;
-    switch (lecturer.status) {
-      case 'online':
-        statusColor = Colors.green;
-        break;
-      case 'busy':
-        statusColor = Colors.orange;
-        break;
-      default:
-        statusColor = Colors.grey;
-    }
-
+  Widget _buildStudentItem(UserModel student) {
     return InkWell(
       onTap: () async {
         // Dapatkan atau buat chat room
         try {
-          final chatId = await _chatService.getOrCreateChatRoom(lecturer.id);
+          final chatId = await _chatService.getOrCreateChatRoom(student.id);
 
           if (mounted) {
-            // Navigasi ke halaman chat dengan dosen
+            // Navigasi ke halaman chat dengan mahasiswa
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder:
-                    (context) =>
-                        ChatDetailScreen(lecturer: lecturer, chatId: chatId),
+                    (context) => LecturerChatDetailScreen(
+                      student: student,
+                      chatId: chatId,
+                    ),
               ),
             ).then((_) {
-              // Refresh chat list after returning
+              // Kembali ke halaman daftar chat setelah selesai chat
               if (mounted) {
-                _loadLecturers();
+                Navigator.pop(context);
               }
             });
           }
@@ -254,49 +220,34 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
         child: Row(
           children: [
             // Foto Profil
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundImage: NetworkImage(lecturer.photoUrl),
-                  onBackgroundImageError: (_, __) {
-                    // Fallback jika gambar tidak dapat dimuat
-                  },
-                  child:
-                      lecturer.photoUrl.isEmpty
-                          ? Text(
-                            lecturer.name.substring(0, 1),
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                          : null,
-                ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                ),
-              ],
+            CircleAvatar(
+              radius: 28,
+              backgroundImage:
+                  (student.photoUrl?.isNotEmpty ?? false)
+                      ? NetworkImage(student.photoUrl!)
+                      : null,
+              child:
+                  (student.photoUrl?.isEmpty ?? true)
+                      ? Text(
+                        student.name.isNotEmpty
+                            ? student.name.substring(0, 1)
+                            : '?',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                      : null,
             ),
             const SizedBox(width: 16),
 
-            // Informasi Dosen
+            // Informasi Mahasiswa
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    lecturer.name,
+                    student.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -304,21 +255,13 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${lecturer.title} - ${lecturer.department}',
+                    student.nim ?? 'NIM tidak tersedia',
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    lecturer.status == 'online'
-                        ? 'Online'
-                        : 'Terakhir dilihat ${lecturer.lastSeen}',
-                    style: TextStyle(
-                      color:
-                          lecturer.status == 'online'
-                              ? Colors.green
-                              : Colors.grey.shade500,
-                      fontSize: 12,
-                    ),
+                    student.department ?? 'Jurusan tidak tersedia',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                   ),
                 ],
               ),

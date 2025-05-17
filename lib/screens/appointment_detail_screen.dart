@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/meeting_model.dart';
 import '../services/appointment_service.dart';
+import '../services/storage_service.dart';
 import 'fixed_location_picker_screen.dart';
 
 class AppointmentDetailScreen extends StatefulWidget {
@@ -17,9 +20,14 @@ class AppointmentDetailScreen extends StatefulWidget {
 
 class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   final AppointmentService _appointmentService = AppointmentService();
+  final ImagePicker _imagePicker = ImagePicker();
+
   bool _isLoading = false;
   String _statusMessage = '';
   bool _showStatusMessage = false;
+
+  File? _attendancePhoto;
+  bool _isCapturingPhoto = false;
 
   String formatDate(DateTime date, String format) {
     return DateFormat(format, 'id_ID').format(date);
@@ -190,40 +198,116 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               ),
             const SizedBox(height: 16),
 
-            // Check-in button (only for approved appointments)
-            if (widget.appointment.status == 'approved')
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _checkIn,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5BBFCB),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
+            // Photo preview if available
+            if (_attendancePhoto != null &&
+                widget.appointment.status == 'approved')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Foto Kehadiran',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5BBFCB),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
                       borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        _attendancePhoto!,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
-                  icon:
-                      _isLoading
-                          ? Container(
-                            width: 24,
-                            height: 24,
-                            padding: const EdgeInsets.all(2.0),
-                            child: const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
-                          )
-                          : const Icon(Icons.check_circle),
-                  label: Text(
-                    _isLoading ? 'Memproses...' : 'Check-in Janji',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _capturePhoto,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Ambil Ulang'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF5BBFCB),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  ],
                 ),
+              ),
+
+            // Check-in and photo buttons (only for approved appointments)
+            if (widget.appointment.status == 'approved')
+              Column(
+                children: [
+                  // Photo capture button
+                  if (_attendancePhoto == null)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoading ? null : _capturePhoto,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF5BBFCB),
+                          side: const BorderSide(color: Color(0xFF5BBFCB)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        icon: const Icon(Icons.camera_alt),
+                        label: const Text(
+                          'Ambil Foto Kehadiran',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+
+                  // Check-in button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _checkIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5BBFCB),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon:
+                          _isLoading
+                              ? Container(
+                                width: 24,
+                                height: 24,
+                                padding: const EdgeInsets.all(2.0),
+                                child: const CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                              : const Icon(Icons.check_circle),
+                      label: Text(
+                        _isLoading ? 'Memproses...' : 'Check-in Janji',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
@@ -254,7 +338,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         break;
       case 'checked-in':
         statusColor = Colors.purple;
-        statusText = 'Sudah Check-in';
+        statusText = 'Sudah Bimbingan';
         break;
       default:
         statusColor = Colors.grey;
@@ -303,6 +387,42 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     );
   }
 
+  Future<void> _capturePhoto() async {
+    try {
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        maxWidth: 1280,
+        maxHeight: 960,
+      );
+
+      if (photo != null) {
+        if (!mounted) return;
+
+        setState(() {
+          _attendancePhoto = File(photo.path);
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Foto berhasil diambil. Silakan lanjutkan check-in.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengambil foto: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _checkIn() async {
     setState(() {
       _isLoading = true;
@@ -316,11 +436,12 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       // Get current location
       final position = await Geolocator.getCurrentPosition();
 
-      // Try to check in
+      // Try to check in with photo if available
       final bool success = await _appointmentService.checkInAppointment(
         widget.appointment.id,
         position.latitude,
         position.longitude,
+        attendancePhoto: _attendancePhoto,
       );
 
       setState(() {
@@ -331,6 +452,9 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               'Check-in berhasil! Anda berada di lokasi yang benar.';
           // Update the appointment status locally
           widget.appointment.status = 'checked-in';
+          if (_attendancePhoto != null) {
+            _statusMessage += ' Foto kehadiran berhasil diunggah.';
+          }
         } else {
           _statusMessage =
               'Check-in gagal! Anda tidak berada di lokasi yang ditentukan.';
@@ -377,4 +501,3 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     }
   }
 }
-

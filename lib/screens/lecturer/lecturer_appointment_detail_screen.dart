@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../models/meeting_model.dart';
 import '../../services/appointment_service.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../services/storage_service.dart';
 
 class LecturerAppointmentDetailScreen extends StatefulWidget {
   final MeetingModel appointment;
 
-  const LecturerAppointmentDetailScreen({
-    super.key,
-    required this.appointment,
-  });
+  const LecturerAppointmentDetailScreen({super.key, required this.appointment});
 
   @override
   State<LecturerAppointmentDetailScreen> createState() =>
@@ -29,6 +26,13 @@ class _LecturerAppointmentDetailScreenState
       appBar: AppBar(
         title: const Text('Detail Janji Bimbingan'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            tooltip: 'Hapus Janji',
+            onPressed: _showDeleteConfirmation,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -42,10 +46,7 @@ class _LecturerAppointmentDetailScreenState
             // Title
             Text(
               widget.appointment.title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
 
@@ -80,10 +81,7 @@ class _LecturerAppointmentDetailScreenState
             // Student info
             const Text(
               'Mahasiswa',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -95,10 +93,7 @@ class _LecturerAppointmentDetailScreenState
             // Description
             const Text(
               'Deskripsi',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -107,43 +102,131 @@ class _LecturerAppointmentDetailScreenState
             ),
             const SizedBox(height: 24),
 
-            // Map button
-            if (widget.appointment.latitude != null &&
-                widget.appointment.longitude != null)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _openMap,
-                  icon: const Icon(Icons.map),
-                  label: const Text('Buka di Google Maps'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
-
             // Status message
             if (_showStatusMessage)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _statusMessage.contains('berhasil')
-                      ? Colors.green.shade100
-                      : Colors.red.shade100,
+                  color:
+                      _statusMessage.contains('berhasil')
+                          ? Colors.green.shade100
+                          : Colors.red.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   _statusMessage,
                   style: TextStyle(
-                    color: _statusMessage.contains('berhasil')
-                        ? Colors.green.shade800
-                        : Colors.red.shade800,
+                    color:
+                        _statusMessage.contains('berhasil')
+                            ? Colors.green.shade800
+                            : Colors.red.shade800,
                   ),
                 ),
               ),
             const SizedBox(height: 16),
+
+            // Check-in information (only for checked-in or completed appointments)
+            if (widget.appointment.status == 'checked-in' ||
+                widget.appointment.status == 'completed')
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withAlpha(15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.purple.withAlpha(50)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.purple),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Bukti Kehadiran Mahasiswa',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Student info
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.person,
+                          size: 18,
+                          color: Colors.purple,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Mahasiswa: ${widget.appointment.studentName ?? "Tidak tersedia"}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Check-in time
+                    if (widget.appointment.checkedInAt != null)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time,
+                            size: 18,
+                            color: Colors.purple,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Waktu check-in: ${_formatDateTime(widget.appointment.checkedInAt!)}',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 16),
+
+                    // Attendance Photo (if available)
+                    if (widget.appointment.attendancePhotoUrl != null) ...[
+                      const Text(
+                        'Foto Bukti Kehadiran:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: _buildAttendancePhotoWidget(),
+                      ),
+                      if (widget.appointment.attendancePhotoTimestamp != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Diambil pada: ${_formatDateTime(widget.appointment.attendancePhotoTimestamp!)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ],
+                ),
+              ),
 
             // Complete button (only for checked-in appointments)
             if (widget.appointment.status == 'checked-in')
@@ -209,7 +292,7 @@ class _LecturerAppointmentDetailScreenState
         break;
       case 'checked-in':
         statusColor = Colors.purple;
-        statusText = 'Sudah Check-in';
+        statusText = 'Sudah Bimbingan';
         break;
       default:
         statusColor = Colors.grey;
@@ -219,16 +302,13 @@ class _LecturerAppointmentDetailScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withAlpha(25),
         border: Border.all(color: statusColor),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
         statusText,
-        style: TextStyle(
-          color: statusColor,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -242,7 +322,7 @@ class _LecturerAppointmentDetailScreenState
       'Kamis',
       'Jumat',
       'Sabtu',
-      'Minggu'
+      'Minggu',
     ];
     final List<String> months = [
       'Jan',
@@ -256,33 +336,13 @@ class _LecturerAppointmentDetailScreenState
       'Sep',
       'Okt',
       'Nov',
-      'Des'
+      'Des',
     ];
 
     final day = days[dateTime.weekday - 1];
     final month = months[dateTime.month - 1];
 
     return '$day, ${dateTime.day} $month ${dateTime.year} - ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> _openMap() async {
-    if (widget.appointment.latitude == null ||
-        widget.appointment.longitude == null) {
-      return;
-    }
-
-    final url =
-        'https://www.google.com/maps/search/?api=1&query=${widget.appointment.latitude},${widget.appointment.longitude}';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tidak dapat membuka peta'),
-        ),
-      );
-    }
   }
 
   Future<void> _completeAppointment() async {
@@ -308,5 +368,149 @@ class _LecturerAppointmentDetailScreenState
         _statusMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
       });
     }
+  }
+
+  // Menampilkan dialog konfirmasi hapus janji
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Hapus Janji'),
+            content: Text(
+              'Apakah Anda yakin ingin menghapus janji bimbingan dengan ${widget.appointment.studentName ?? "Mahasiswa"}?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Simpan context sebelum async gap
+                  final BuildContext dialogContext = context;
+
+                  // Tutup dialog konfirmasi
+                  Navigator.of(dialogContext).pop();
+
+                  // Hapus janji
+                  _deleteAppointment();
+                },
+                child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Menghapus janji temu
+  Future<void> _deleteAppointment() async {
+    setState(() {
+      _isLoading = true;
+      _showStatusMessage = false;
+    });
+
+    try {
+      await _appointmentService.deleteAppointment(widget.appointment.id);
+
+      if (!mounted) return;
+
+      // Tampilkan pesan sukses
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Janji bimbingan berhasil dihapus'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Kembali ke halaman sebelumnya
+      Navigator.of(context).pop();
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _showStatusMessage = true;
+        _statusMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+      });
+    }
+  }
+
+  // Build widget to display attendance photo from Base64 string
+  Widget _buildAttendancePhotoWidget() {
+    if (widget.appointment.attendancePhotoUrl == null ||
+        widget.appointment.attendancePhotoUrl!.isEmpty) {
+      return Container(
+        height: 200,
+        width: double.infinity,
+        color: Colors.grey.shade200,
+        child: const Center(child: Text('Tidak ada foto kehadiran')),
+      );
+    }
+
+    // Check if it's a Base64 image
+    if (widget.appointment.attendancePhotoUrl!.startsWith('data:image')) {
+      // Convert Base64 to image
+      final imageBytes = StorageService.base64ToImage(
+        widget.appointment.attendancePhotoUrl,
+      );
+
+      if (imageBytes != null) {
+        return Image.memory(
+          imageBytes,
+          height: 200,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildErrorImageWidget();
+          },
+        );
+      } else {
+        return _buildErrorImageWidget();
+      }
+    } else {
+      // Fallback to network image (for backward compatibility)
+      return Image.network(
+        widget.appointment.attendancePhotoUrl!,
+        height: 200,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return _buildLoadingImageWidget(loadingProgress);
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return _buildErrorImageWidget();
+        },
+      );
+    }
+  }
+
+  // Widget for loading state
+  Widget _buildLoadingImageWidget(ImageChunkEvent loadingProgress) {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      color: Colors.grey.shade200,
+      child: Center(
+        child: CircularProgressIndicator(
+          value:
+              loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+        ),
+      ),
+    );
+  }
+
+  // Widget for error state
+  Widget _buildErrorImageWidget() {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      color: Colors.grey.shade200,
+      child: const Center(
+        child: Icon(Icons.error_outline, color: Colors.red, size: 40),
+      ),
+    );
   }
 }

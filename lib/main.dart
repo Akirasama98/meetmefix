@@ -9,6 +9,7 @@ import 'screens/schedule_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/integrated_login_screen.dart';
+import 'screens/lecturer_list_screen.dart';
 import 'providers/auth_provider.dart';
 import 'utils/firestore_initializer.dart';
 import 'utils/appointments_initializer.dart';
@@ -65,15 +66,13 @@ class MyApp extends StatelessWidget {
         builder: (context, child) {
           // Pastikan text scaling tidak terlalu besar
           return MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaleFactor: 1.0,
-            ),
+            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
             child: child!,
           );
         },
-        home: const ResponsiveWrapper(
-          child: IntegratedLoginScreen(),
-        ),
+        // Define routes
+        routes: {'/lecturer_list': (context) => const LecturerListScreen()},
+        home: const ResponsiveWrapper(child: IntegratedLoginScreen()),
       ),
     );
   }
@@ -83,16 +82,13 @@ class MyApp extends StatelessWidget {
 class ResponsiveWrapper extends StatelessWidget {
   final Widget child;
 
-  const ResponsiveWrapper({
-    super.key,
-    required this.child,
-  });
+  const ResponsiveWrapper({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
     // Dapatkan ukuran layar
     final size = MediaQuery.of(context).size;
-    
+
     // Jika layar cukup besar (tablet/desktop), batasi lebar maksimum
     if (size.width > 600) {
       return Center(
@@ -102,7 +98,7 @@ class ResponsiveWrapper extends StatelessWidget {
         ),
       );
     }
-    
+
     // Untuk layar kecil (smartphone), gunakan seluruh layar
     return child;
   }

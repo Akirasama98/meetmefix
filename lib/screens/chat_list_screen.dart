@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../../models/user_model.dart';
-import '../../services/chat_service.dart';
-import 'lecturer_chat_detail_screen.dart';
-import 'lecturer_student_search_screen.dart';
+import '../services/chat_service.dart';
+import '../models/lecturer_model.dart'; // Import the proper model
+import 'chat_detail_screen.dart';
 
-class LecturerChatListScreen extends StatefulWidget {
-  const LecturerChatListScreen({super.key});
+class ChatListScreen extends StatefulWidget {
+  const ChatListScreen({super.key});
 
   @override
-  State<LecturerChatListScreen> createState() => _LecturerChatListScreenState();
+  State<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
+class _ChatListScreenState extends State<ChatListScreen> {
   final ChatService _chatService = ChatService();
   bool _isLoading = true;
   List<Map<String, dynamic>> _chatList = [];
@@ -69,6 +67,7 @@ class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
               : _chatList.isEmpty
               ? _buildEmptyChatList()
               : ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
                 itemCount: _chatList.length,
                 itemBuilder: (context, index) {
                   final chat = _chatList[index];
@@ -77,18 +76,13 @@ class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
               ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const LecturerStudentSearchScreen(),
-            ),
-          ).then((_) {
+          Navigator.pushNamed(context, '/lecturer_list').then((_) {
             // Refresh daftar chat setelah kembali dari pencarian
             _loadChatList();
           });
         },
         backgroundColor: const Color(0xFF5BBFCB),
-        tooltip: 'Cari Mahasiswa',
+        tooltip: 'Cari Dosen',
         child: const Icon(Icons.person_add, color: Colors.white),
       ),
     );
@@ -111,24 +105,19 @@ class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tekan tombol + untuk mencari mahasiswa dan memulai percakapan',
+            'Tekan tombol + untuk mencari dosen dan memulai percakapan',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LecturerStudentSearchScreen(),
-                ),
-              ).then((_) {
+              Navigator.pushNamed(context, '/lecturer_list').then((_) {
                 _loadChatList();
               });
             },
             icon: const Icon(Icons.person_add),
-            label: const Text('Cari Mahasiswa'),
+            label: const Text('Cari Dosen'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF5BBFCB),
               foregroundColor: Colors.white,
@@ -140,38 +129,35 @@ class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
   }
 
   Widget _buildChatItem(Map<String, dynamic> chat) {
-    final String partnerId = chat['partnerId'] ?? '';
-    final String partnerName = chat['partnerName'] ?? 'Unknown';
-    final String partnerPhotoUrl = chat['partnerPhotoUrl'] ?? '';
-    final int unreadCount = chat['unreadCount'] ?? 0;
-    final Map<String, dynamic>? lastMessage = chat['lastMessage'];
+    final partnerName = chat['partnerName'] ?? 'Unknown';
+    final lastMessage = chat['lastMessage'];
+    final unreadCount = chat['unreadCount'] ?? 0;
 
-    // Buat model mahasiswa dari data partner
-    final student = UserModel(
-      id: partnerId,
-      name: partnerName,
-      email: '',
-      photoUrl: partnerPhotoUrl,
-      role: 'student',
-      nim: chat['partnerNim'] ?? '',
-      department: chat['partnerDepartment'] ?? '',
-    );
+    // Create lecturer model from chat data using the imported model
+    final lecturer = LecturerModel.fromMap({
+      'name': partnerName,
+      'photoUrl': chat['partnerPhotoUrl'] ?? '',
+      'status': 'offline',
+      'lastSeen': '',
+      'department': chat['partnerDepartment'] ?? '',
+      'title': chat['partnerTitle'] ?? '',
+    }, chat['partnerId']);
 
     return InkWell(
       onTap: () async {
-        // Navigasi ke halaman chat detail
+        // Navigate to chat detail
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder:
-                (context) => LecturerChatDetailScreen(
-                  student: student,
+                (context) => ChatDetailScreen(
+                  lecturer: lecturer,
                   chatId: chat['chatId'],
                 ),
           ),
         );
 
-        // Refresh daftar chat setelah kembali
+        // Refresh chat list after returning
         _loadChatList();
       },
       child: Container(
@@ -181,59 +167,29 @@ class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
         ),
         child: Row(
           children: [
-            // Foto Profil
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundImage:
-                      partnerPhotoUrl.isNotEmpty
-                          ? NetworkImage(partnerPhotoUrl)
-                          : null,
-                  child:
-                      partnerPhotoUrl.isEmpty
-                          ? Text(
-                            partnerName.isNotEmpty
-                                ? partnerName.substring(0, 1)
-                                : '?',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                          : null,
-                ),
-                if (unreadCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        unreadCount > 9 ? '9+' : unreadCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
+            // Profile Picture
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.grey.shade200,
+              backgroundImage:
+                  chat['partnerPhotoUrl'] != null &&
+                          chat['partnerPhotoUrl'].isNotEmpty
+                      ? NetworkImage(chat['partnerPhotoUrl'])
+                      : null,
+              child:
+                  chat['partnerPhotoUrl'] == null ||
+                          chat['partnerPhotoUrl'].isEmpty
+                      ? Text(
+                        partnerName.isNotEmpty
+                            ? partnerName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(fontSize: 20),
+                      )
+                      : null,
             ),
             const SizedBox(width: 16),
 
-            // Informasi Chat
+            // Chat Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,6 +232,24 @@ class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
                 ],
               ),
             ),
+
+            // Unread Count Badge
+            if (unreadCount > 0)
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5BBFCB),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  unreadCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -283,24 +257,32 @@ class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
   }
 
   String _formatTimestamp(int timestamp) {
-    if (timestamp == 0) return '';
-
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
     final now = DateTime.now();
-    final messageTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    final difference = now.difference(messageTime);
 
-    if (difference.inDays == 0) {
-      // Hari ini
-      return DateFormat('HH:mm').format(messageTime);
-    } else if (difference.inDays == 1) {
-      // Kemarin
+    if (now.difference(date).inDays == 0) {
+      // Today, show time
+      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } else if (now.difference(date).inDays == 1) {
+      // Yesterday
       return 'Kemarin';
-    } else if (difference.inDays < 7) {
-      // Dalam minggu ini
-      return DateFormat('EEEE').format(messageTime);
+    } else if (now.difference(date).inDays < 7) {
+      // This week, show day name
+      final days = [
+        'Senin',
+        'Selasa',
+        'Rabu',
+        'Kamis',
+        'Jumat',
+        'Sabtu',
+        'Minggu',
+      ];
+      return days[date.weekday - 1];
     } else {
-      // Lebih dari seminggu
-      return DateFormat('dd/MM/yyyy').format(messageTime);
+      // Older, show date
+      return '${date.day}/${date.month}/${date.year}';
     }
   }
 }
+
+// Remove the local LecturerModel class since we're now using the one from models/lecturer_model.dart
