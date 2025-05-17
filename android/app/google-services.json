@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "839360324905",
+    "project_id": "meetme-c10ac",
+    "storage_bucket": "meetme-c10ac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:839360324905:android:0956d2b831f3ec7c030338",
+        "android_client_info": {
+          "package_name": "com.example.meetme_firebase"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeVIxBThln5fIVD1088l7sk6Wy_DaJzEs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
