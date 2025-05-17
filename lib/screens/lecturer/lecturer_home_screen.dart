@@ -25,14 +25,14 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
-    
+
     // Inisialisasi tanggal awal minggu (Senin dari minggu saat ini)
     final now = DateTime.now();
     // Mendapatkan hari dalam seminggu (1-7, dengan 1 = Senin, 7 = Minggu)
     final weekday = now.weekday;
     // Menghitung tanggal Senin dari minggu saat ini
     _weekStartDate = now.subtract(Duration(days: weekday - 1));
-    
+
     _fetchMeetings();
   }
 
@@ -200,7 +200,8 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                 CircleAvatar(
                   radius: size.width * 0.08,
                   backgroundImage: NetworkImage(
-                    user?.photoUrl ?? 'https://randomuser.me/api/portraits/men/1.jpg',
+                    user?.photoUrl ??
+                        'https://randomuser.me/api/portraits/men/1.jpg',
                   ),
                   onBackgroundImageError: (_, __) {},
                 ),
@@ -224,7 +225,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                       Text(
                         user?.nip ?? '198201182008121002',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withAlpha(230),
                           fontSize: size.width * 0.035,
                         ),
                       ),
@@ -232,7 +233,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                       Text(
                         'Dosen ${user?.department ?? 'Teknik Informatika'}',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withAlpha(230),
                           fontSize: size.width * 0.035,
                         ),
                       ),
@@ -252,18 +253,27 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
     final DateTime today = DateTime.now();
     final DateTime selectedDay = _selectedDate;
     final size = MediaQuery.of(context).size;
-    
+
     // Daftar nama hari dalam bahasa Indonesia
-    final List<String> dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-    
-    // Hitung lebar item hari
-    final double dayItemWidth = (size.width - 32) / 7;
+    final List<String> dayNames = [
+      'Sen',
+      'Sel',
+      'Rab',
+      'Kam',
+      'Jum',
+      'Sab',
+      'Min',
+    ];
+
+    // Hitung lebar item hari (dengan padding yang lebih kecil)
+    final double dayItemWidth =
+        (size.width - 48) / 7; // Mengurangi lebar untuk mencegah overflow
 
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(size.width * 0.04),
+        padding: EdgeInsets.all(size.width * 0.03), // Mengurangi padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -274,99 +284,164 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                 Text(
                   'Jadwal Bimbingan',
                   style: TextStyle(
-                    fontSize: size.width * 0.045,
+                    fontSize: size.width * 0.04, // Mengurangi ukuran font
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF333333),
                   ),
                 ),
                 Text(
-                  formatDate(_selectedDate, 'MMMM yyyy'),
+                  formatDate(
+                    _selectedDate,
+                    'MMM yyyy',
+                  ), // Mempersingkat format bulan
                   style: TextStyle(
-                    fontSize: size.width * 0.04,
+                    fontSize: size.width * 0.035, // Mengurangi ukuran font
                     color: const Color(0xFF5BBFCB),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: size.height * 0.02),
-
-            // Hari-hari dalam seminggu dengan tanggal
+            SizedBox(height: size.height * 0.01), // Mengurangi jarak
+            // Tombol navigasi minggu
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(7, (index) {
-                final DateTime date = _weekStartDate.add(Duration(days: index));
-                final bool isSelected = date.year == selectedDay.year &&
-                    date.month == selectedDay.month &&
-                    date.day == selectedDay.day;
-                final bool isToday = date.year == today.year &&
-                    date.month == today.month &&
-                    date.day == today.day;
-                
-                // Cek apakah ada janji pada tanggal ini
-                final bool hasAppointment = _meetings.any((meeting) =>
-                    meeting.dateTime.year == date.year &&
-                    meeting.dateTime.month == date.month &&
-                    meeting.dateTime.day == date.day);
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.chevron_left,
+                    color: Color(0xFF5BBFCB),
+                  ),
+                  onPressed: _previousWeek,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  iconSize: size.width * 0.05,
+                ),
+                Text(
+                  '${formatDate(_weekStartDate, 'd MMM')} - ${formatDate(_weekStartDate.add(const Duration(days: 6)), 'd MMM')}',
+                  style: TextStyle(
+                    fontSize: size.width * 0.03,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.chevron_right,
+                    color: Color(0xFF5BBFCB),
+                  ),
+                  onPressed: _nextWeek,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  iconSize: size.width * 0.05,
+                ),
+              ],
+            ),
+            SizedBox(height: size.height * 0.01), // Mengurangi jarak
+            // Hari-hari dalam seminggu dengan tanggal
+            SizedBox(
+              height: size.height * 0.08, // Tetapkan tinggi tetap
+              child: Row(
+                mainAxisAlignment:
+                    MainAxisAlignment
+                        .spaceEvenly, // Menggunakan spaceEvenly untuk distribusi yang lebih baik
+                children: List.generate(7, (index) {
+                  final DateTime date = _weekStartDate.add(
+                    Duration(days: index),
+                  );
+                  final bool isSelected =
+                      date.year == selectedDay.year &&
+                      date.month == selectedDay.month &&
+                      date.day == selectedDay.day;
+                  final bool isToday =
+                      date.year == today.year &&
+                      date.month == today.month &&
+                      date.day == today.day;
 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedDate = date;
-                    });
-                  },
-                  child: Container(
-                    width: dayItemWidth,
-                    padding: EdgeInsets.symmetric(vertical: size.width * 0.02),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFFF79762)
-                          : isToday
-                              ? const Color(0xFFF79762).withOpacity(0.1)
-                              : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        // Nama hari
-                        Text(
-                          dayNames[index],
-                          style: TextStyle(
-                            fontSize: size.width * 0.03,
-                            fontWeight: FontWeight.w500,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xFF5BBFCB),
-                          ),
-                        ),
-                        SizedBox(height: size.height * 0.01),
-                        // Tanggal
-                        Text(
-                          '${date.day}',
-                          style: TextStyle(
-                            fontSize: size.width * 0.04,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                        SizedBox(height: size.height * 0.005),
-                        // Indikator ada janji
-                        if (hasAppointment)
-                          Container(
-                            width: size.width * 0.02,
-                            height: size.width * 0.02,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSelected
-                                  ? Colors.white
-                                  : const Color(0xFFF79762),
+                  // Cek apakah ada janji pada tanggal ini
+                  final bool hasAppointment = _meetings.any(
+                    (meeting) =>
+                        meeting.dateTime.year == date.year &&
+                        meeting.dateTime.month == date.month &&
+                        meeting.dateTime.day == date.day,
+                  );
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedDate = date;
+                      });
+                    },
+                    child: Container(
+                      width: dayItemWidth,
+                      padding: EdgeInsets.symmetric(
+                        vertical: size.width * 0.01,
+                      ), // Mengurangi padding
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected
+                                ? const Color(0xFFF79762)
+                                : isToday
+                                ? const Color(0xFFF79762).withAlpha(25)
+                                : Colors.transparent,
+                        borderRadius: BorderRadius.circular(
+                          8,
+                        ), // Mengurangi radius
+                      ),
+                      child: Column(
+                        mainAxisSize:
+                            MainAxisSize.min, // Menggunakan mainAxisSize.min
+                        mainAxisAlignment:
+                            MainAxisAlignment
+                                .center, // Memastikan konten di tengah
+                        children: [
+                          // Nama hari
+                          Text(
+                            dayNames[index],
+                            style: TextStyle(
+                              fontSize:
+                                  size.width * 0.025, // Mengurangi ukuran font
+                              fontWeight: FontWeight.w500,
+                              color:
+                                  isSelected
+                                      ? Colors.white
+                                      : const Color(0xFF5BBFCB),
                             ),
                           ),
-                      ],
+                          SizedBox(
+                            height: size.height * 0.005,
+                          ), // Mengurangi jarak
+                          // Tanggal
+                          Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              fontSize:
+                                  size.width * 0.035, // Mengurangi ukuran font
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          // Indikator ada janji
+                          if (hasAppointment)
+                            Container(
+                              width:
+                                  size.width *
+                                  0.015, // Mengurangi ukuran indikator
+                              height: size.width * 0.015,
+                              margin: EdgeInsets.only(top: size.height * 0.003),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color:
+                                    isSelected
+                                        ? Colors.white
+                                        : const Color(0xFFF79762),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
           ],
         ),
@@ -376,7 +451,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
 
   Widget _buildScheduleCard() {
     final size = MediaQuery.of(context).size;
-    
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -411,168 +486,49 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
             // Daftar Janji Temu
             _isLoading
                 ? Center(
-                    child: CircularProgressIndicator(
-                      color: const Color(0xFF5BBFCB),
-                    ),
-                  )
+                  child: CircularProgressIndicator(
+                    color: const Color(0xFF5BBFCB),
+                  ),
+                )
                 : _filteredMeetings.isEmpty
-                    ? Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.event_busy,
-                              size: size.width * 0.15,
-                              color: Colors.grey[400],
-                            ),
-                            SizedBox(height: size.height * 0.01),
-                            Text(
-                              'Tidak ada jadwal bimbingan',
-                              style: TextStyle(
-                                fontSize: size.width * 0.04,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _filteredMeetings.length,
-                        itemBuilder: (context, index) {
-                          final meeting = _filteredMeetings[index];
-                          return _buildMeetingCard(meeting, size);
-                        },
+                ? Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.event_busy,
+                        size: size.width * 0.15,
+                        color: Colors.grey[400],
                       ),
+                      SizedBox(height: size.height * 0.01),
+                      Text(
+                        'Tidak ada jadwal bimbingan',
+                        style: TextStyle(
+                          fontSize: size.width * 0.04,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _filteredMeetings.length,
+                  itemBuilder: (context, index) {
+                    final meeting = _filteredMeetings[index];
+                    return _buildMeetingCard(meeting, size);
+                  },
+                ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEmptySchedule() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      alignment: Alignment.center,
-      child: Column(
-        children: [
-          Icon(Icons.event_busy, size: 48, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            'Tidak ada janji bimbingan',
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Pada tanggal ${formatDate(_selectedDate, 'd MMMM yyyy')}',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScheduleItem(MeetingModel meeting) {
-    Color statusColor;
-    String statusText;
-    String studentName =
-        meeting.studentName ??
-        'Mahasiswa ${meeting.studentId.replaceAll('student', '')}';
-
-    switch (meeting.status) {
-      case 'approved':
-        statusColor = Colors.green;
-        statusText = 'Disetujui';
-        break;
-      case 'pending':
-        statusColor = Colors.orange;
-        statusText = 'Menunggu';
-        break;
-      case 'rejected':
-        statusColor = Colors.red;
-        statusText = 'Ditolak';
-        break;
-      default:
-        statusColor = Colors.blue;
-        statusText = 'Selesai';
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                meeting.title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withAlpha(25),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  statusText,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.person, size: 16, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text(studentName, style: TextStyle(color: Colors.grey.shade700)),
-              const SizedBox(width: 16),
-              const Icon(Icons.access_time, size: 16, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text(
-                formatDate(meeting.dateTime, 'HH:mm'),
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.location_on, size: 16, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text(
-                meeting.location,
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(meeting.description, style: const TextStyle(fontSize: 14)),
-        ],
-      ),
-    );
-  }
+  // Unused methods removed
 
   Widget _buildMeetingCard(MeetingModel meeting, Size size) {
-    // Format tanggal dan waktu
-    final formattedDate = DateFormat(
-      'EEEE, d MMMM yyyy',
-      'id_ID',
-    ).format(meeting.dateTime);
+    // Format waktu
     final formattedTime = DateFormat('HH:mm', 'id_ID').format(meeting.dateTime);
 
     return Card(
@@ -608,7 +564,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                     vertical: size.width * 0.01,
                   ),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(meeting.status).withOpacity(0.1),
+                    color: _getStatusColor(meeting.status).withAlpha(25),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -825,8 +781,3 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
     );
   }
 }
-
-
-
-
-
