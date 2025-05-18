@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../integrated_login_screen.dart';
+import '../edit_profile_screen.dart';
+import '../../services/storage_service.dart';
 
 class LecturerProfileScreen extends StatelessWidget {
   const LecturerProfileScreen({super.key});
@@ -20,10 +22,7 @@ class LecturerProfileScreen extends StatelessWidget {
         user?.photoUrl ?? 'https://randomuser.me/api/portraits/men/1.jpg';
 
     // Informasi tambahan dosen
-    final String department = user?.department ?? 'Teknik Informatika';
     final String faculty = 'Fakultas Ilmu Komputer';
-    final String position = 'Dosen Tetap';
-    final String specialization = 'Rekayasa Perangkat Lunak';
 
     return Scaffold(
       body: CustomScrollView(
@@ -99,97 +98,15 @@ class LecturerProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Statistik Bimbingan
-                _buildStatisticsSection(context),
-
-                const SizedBox(height: 20),
-
                 // Professional Information
                 _buildInfoSection(
                   context: context,
-                  title: 'Informasi Profesional',
+                  title: 'Informasi Akademik',
                   items: [
                     {
                       'icon': Icons.school,
                       'label': 'Fakultas',
                       'value': faculty,
-                    },
-                    {
-                      'icon': Icons.business,
-                      'label': 'Jurusan',
-                      'value': department,
-                    },
-                    {'icon': Icons.work, 'label': 'Jabatan', 'value': position},
-                    {
-                      'icon': Icons.psychology,
-                      'label': 'Bidang Keahlian',
-                      'value': specialization,
-                    },
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Jadwal Konsultasi
-                _buildInfoSection(
-                  context: context,
-                  title: 'Jadwal Konsultasi',
-                  items: [
-                    {
-                      'icon': Icons.access_time,
-                      'label': 'Senin',
-                      'value': '13:00 - 15:00',
-                    },
-                    {
-                      'icon': Icons.access_time,
-                      'label': 'Rabu',
-                      'value': '13:00 - 15:00',
-                    },
-                    {
-                      'icon': Icons.access_time,
-                      'label': 'Jumat',
-                      'value': '09:00 - 11:00',
-                    },
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Bidang Penelitian
-                _buildInfoSection(
-                  context: context,
-                  title: 'Bidang Penelitian',
-                  items: [
-                    {
-                      'icon': Icons.science,
-                      'label': 'Utama',
-                      'value': 'Kecerdasan Buatan',
-                    },
-                    {
-                      'icon': Icons.science,
-                      'label': 'Pendukung',
-                      'value': 'Machine Learning, Mobile Computing',
-                    },
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Kontak & Lokasi
-                _buildInfoSection(
-                  context: context,
-                  title: 'Kontak & Lokasi',
-                  items: [
-                    {'icon': Icons.email, 'label': 'Email', 'value': email},
-                    {
-                      'icon': Icons.phone,
-                      'label': 'Telepon',
-                      'value': '+62 812-3456-7890',
-                    },
-                    {
-                      'icon': Icons.location_on,
-                      'label': 'Ruang Kerja',
-                      'value': 'Gedung C Lantai 3, Ruang C3.12',
                     },
                   ],
                 ),
@@ -248,10 +165,27 @@ class LecturerProfileScreen extends StatelessWidget {
                 ),
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: NetworkImage(avatarUrl),
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage:
+                      avatarUrl.startsWith('data:image')
+                          ? MemoryImage(
+                            StorageService.base64ToImage(avatarUrl)!,
+                          )
+                          : NetworkImage(avatarUrl) as ImageProvider,
                   onBackgroundImageError: (_, __) {
                     // Fallback jika gambar tidak dapat dimuat
                   },
+                  child:
+                      (avatarUrl.isEmpty ||
+                              (avatarUrl.startsWith('data:image') &&
+                                  StorageService.base64ToImage(avatarUrl) ==
+                                      null))
+                          ? Icon(
+                            Icons.person,
+                            size: 50,
+                            color: Colors.grey.shade400,
+                          )
+                          : null,
                 ),
               ),
 
@@ -265,10 +199,10 @@ class LecturerProfileScreen extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.edit, color: Colors.white, size: 16),
                   onPressed: () {
-                    // Implementasi edit foto profil
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur edit foto profil belum tersedia'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen(),
                       ),
                     );
                   },
@@ -334,100 +268,6 @@ class LecturerProfileScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatisticsSection(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha(50),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Statistik Bimbingan',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildStatItem(
-                icon: Icons.people,
-                value: '12',
-                label: 'Mahasiswa\nBimbingan',
-                color: const Color(0xFF5BBFCB),
-              ),
-              _buildStatItem(
-                icon: Icons.check_circle,
-                value: '8',
-                label: 'Janji\nDisetujui',
-                color: Colors.green,
-              ),
-              _buildStatItem(
-                icon: Icons.pending_actions,
-                value: '3',
-                label: 'Janji\nMenunggu',
-                color: Colors.orange,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem({
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withAlpha(30),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -546,9 +386,10 @@ class LecturerProfileScreen extends StatelessWidget {
             icon: Icons.person,
             title: 'Edit Profil',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur edit profil belum tersedia'),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EditProfileScreen(),
                 ),
               );
             },
@@ -561,56 +402,6 @@ class LecturerProfileScreen extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Fitur notifikasi belum tersedia'),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            icon: Icons.schedule,
-            title: 'Jadwal Mengajar',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur jadwal mengajar belum tersedia'),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            icon: Icons.people,
-            title: 'Daftar Mahasiswa Bimbingan',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Fitur daftar mahasiswa bimbingan belum tersedia',
-                  ),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            icon: Icons.assessment,
-            title: 'Laporan Bimbingan',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur laporan bimbingan belum tersedia'),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            icon: Icons.settings,
-            title: 'Pengaturan',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur pengaturan belum tersedia'),
                 ),
               );
             },

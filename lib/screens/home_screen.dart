@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../models/meeting_model.dart';
 import '../services/appointment_service.dart';
 import 'create_appointment_screen.dart';
+import '../services/storage_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -210,14 +211,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     shape: BoxShape.circle,
                     color: Colors.white,
                   ),
-                  child: Center(
-                    child: Text(
-                      'U',
-                      style: TextStyle(
-                        color: const Color(0xFF5BBFCB),
-                        fontWeight: FontWeight.bold,
-                        fontSize: size.width * 0.05, // Font responsif
-                      ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/Logo_unej.png',
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
@@ -241,7 +238,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Avatar Pengguna
                 CircleAvatar(
                   radius: size.width * 0.08, // Ukuran responsif
-                  backgroundImage: NetworkImage(photoUrl),
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage:
+                      photoUrl.startsWith('data:image')
+                          ? MemoryImage(StorageService.base64ToImage(photoUrl)!)
+                          : NetworkImage(photoUrl) as ImageProvider,
+                  onBackgroundImageError: (_, __) {},
+                  child:
+                      (photoUrl.isEmpty ||
+                              (photoUrl.startsWith('data:image') &&
+                                  StorageService.base64ToImage(photoUrl) ==
+                                      null))
+                          ? Icon(
+                            Icons.person,
+                            size: size.width * 0.08,
+                            color: Colors.grey.shade400,
+                          )
+                          : null,
                 ),
                 SizedBox(width: size.width * 0.04),
                 // Nama dan NIM

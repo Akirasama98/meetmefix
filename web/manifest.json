@@ -1,6 +1,6 @@
 {
-    "name": "meetme_firebase",
-    "short_name": "meetme_firebase",
+    "name": "Meetme",
+    "short_name": "Meetme",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

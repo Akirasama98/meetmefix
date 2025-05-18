@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/chat_service.dart';
+import '../../services/storage_service.dart';
 import 'lecturer_chat_detail_screen.dart';
 
 class LecturerStudentSearchScreen extends StatefulWidget {
@@ -222,12 +223,21 @@ class _LecturerStudentSearchScreenState
             // Foto Profil
             CircleAvatar(
               radius: 28,
+              backgroundColor: Colors.grey.shade200,
               backgroundImage:
                   (student.photoUrl?.isNotEmpty ?? false)
-                      ? NetworkImage(student.photoUrl!)
+                      ? student.photoUrl!.startsWith('data:image')
+                          ? MemoryImage(
+                            StorageService.base64ToImage(student.photoUrl!)!,
+                          )
+                          : NetworkImage(student.photoUrl!) as ImageProvider
                       : null,
               child:
-                  (student.photoUrl?.isEmpty ?? true)
+                  (student.photoUrl?.isEmpty ?? true) ||
+                          ((student.photoUrl?.startsWith('data:image') ??
+                                  false) &&
+                              StorageService.base64ToImage(student.photoUrl!) ==
+                                  null)
                       ? Text(
                         student.name.isNotEmpty
                             ? student.name.substring(0, 1)

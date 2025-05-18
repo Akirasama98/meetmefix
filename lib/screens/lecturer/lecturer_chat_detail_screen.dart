@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/chat_message_model.dart';
 import '../../models/user_model.dart';
 import '../../services/chat_service.dart';
+import '../../services/storage_service.dart';
 
 class LecturerChatDetailScreen extends StatefulWidget {
   final UserModel student;
@@ -148,12 +149,26 @@ class _LecturerChatDetailScreenState extends State<LecturerChatDetailScreen> {
           children: [
             CircleAvatar(
               radius: 20,
+              backgroundColor: Colors.grey.shade200,
               backgroundImage:
                   (widget.student.photoUrl?.isNotEmpty ?? false)
-                      ? NetworkImage(widget.student.photoUrl!)
+                      ? widget.student.photoUrl!.startsWith('data:image')
+                          ? MemoryImage(
+                            StorageService.base64ToImage(
+                              widget.student.photoUrl!,
+                            )!,
+                          )
+                          : NetworkImage(widget.student.photoUrl!)
+                              as ImageProvider
                       : null,
               child:
-                  (widget.student.photoUrl?.isEmpty ?? true)
+                  (widget.student.photoUrl?.isEmpty ?? true) ||
+                          ((widget.student.photoUrl?.startsWith('data:image') ??
+                                  false) &&
+                              StorageService.base64ToImage(
+                                    widget.student.photoUrl!,
+                                  ) ==
+                                  null)
                       ? Text(
                         widget.student.name.isNotEmpty
                             ? widget.student.name.substring(0, 1)
@@ -299,12 +314,26 @@ class _LecturerChatDetailScreenState extends State<LecturerChatDetailScreen> {
           if (!isMe)
             CircleAvatar(
               radius: 16,
+              backgroundColor: Colors.grey.shade200,
               backgroundImage:
                   (widget.student.photoUrl?.isNotEmpty ?? false)
-                      ? NetworkImage(widget.student.photoUrl!)
+                      ? widget.student.photoUrl!.startsWith('data:image')
+                          ? MemoryImage(
+                            StorageService.base64ToImage(
+                              widget.student.photoUrl!,
+                            )!,
+                          )
+                          : NetworkImage(widget.student.photoUrl!)
+                              as ImageProvider
                       : null,
               child:
-                  (widget.student.photoUrl?.isEmpty ?? true)
+                  (widget.student.photoUrl?.isEmpty ?? true) ||
+                          ((widget.student.photoUrl?.startsWith('data:image') ??
+                                  false) &&
+                              StorageService.base64ToImage(
+                                    widget.student.photoUrl!,
+                                  ) ==
+                                  null)
                       ? Text(
                         widget.student.name.isNotEmpty
                             ? widget.student.name.substring(0, 1)

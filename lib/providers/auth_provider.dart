@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
+import '../models/firestore_user_model.dart';
 import '../services/firebase_auth_service.dart';
+import '../services/storage_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final FirebaseAuthService _authService = FirebaseAuthService();
@@ -194,6 +197,71 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       return null;
+    }
+  }
+
+  // Upload profile image as Base64 string
+  Future<String?> uploadProfileImage(File imageFile) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      if (_userModel == null || _userModel!.id.isEmpty) {
+        throw Exception('User not authenticated');
+      }
+
+      // Use StorageService to convert image to Base64
+      final storageService = StorageService();
+      final base64Image = await storageService.uploadProfilePhoto(imageFile);
+
+      return base64Image;
+    } catch (e) {
+      _error = e.toString();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Update user profile in Firestore
+  Future<bool> updateUserProfile(UserModel updatedUser) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      if (_userModel == null || _userModel!.id.isEmpty) {
+        throw Exception('User not authenticated');
+      }
+
+      // Convert UserModel to FirestoreUserModel
+      final firestoreUser = FirestoreUserModel(
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        nim: updatedUser.nim,
+        nip: updatedUser.nip,
+        department: updatedUser.department,
+        faculty: updatedUser.faculty,
+        phone: updatedUser.phone,
+        photoUrl: updatedUser.photoUrl,
+      );
+
+      // Update user data in Firestore
+      await _authService.updateUserData(firestoreUser);
+
+      // Update local user model
+      _userModel = updatedUser;
+
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

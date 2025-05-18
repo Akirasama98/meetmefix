@@ -91,6 +91,8 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
                   _buildPasswordField(),
                   const SizedBox(height: 30),
                   _buildLoginButton(),
+                  const SizedBox(height: 40),
+                  _buildCopyright(),
                 ],
               ),
             ),
@@ -103,38 +105,12 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        // Logo Universitas
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withAlpha(50),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Image.network(
-              'https://unej.ac.id/wp-content/uploads/2021/02/logo-unej-transparan.png',
-              width: 60,
-              height: 60,
-              errorBuilder: (context, error, stackTrace) {
-                return const Text(
-                  'UNEJ',
-                  style: TextStyle(
-                    color: Color(0xFF5BBFCB),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                );
-              },
-            ),
-          ),
+        // App logo
+        Image.asset(
+          'assets/images/apk.png',
+          width: 150,
+          height: 150,
+          fit: BoxFit.contain,
         ),
         const SizedBox(height: 16),
         const Text(
@@ -147,7 +123,7 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Login Bimbingan Akademik',
+          'Aplikasi Bimbingan Akademik',
           style: TextStyle(
             fontSize: 18,
             color: Color(0xFF5BBFCB),
@@ -248,6 +224,24 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
                 'Masuk',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+    );
+  }
+
+  Widget _buildCopyright() {
+    return Column(
+      children: [
+        const Divider(color: Colors.grey, thickness: 0.5),
+        const SizedBox(height: 10),
+        Text(
+          'versi 1.0.0',
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

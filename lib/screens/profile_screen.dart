@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../screens/integrated_login_screen.dart';
+import 'edit_profile_screen.dart';
+import '../services/storage_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -325,10 +327,27 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: NetworkImage(avatarUrl),
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage:
+                      avatarUrl.startsWith('data:image')
+                          ? MemoryImage(
+                            StorageService.base64ToImage(avatarUrl)!,
+                          )
+                          : NetworkImage(avatarUrl) as ImageProvider,
                   onBackgroundImageError: (_, __) {
                     // Fallback jika gambar tidak dapat dimuat
                   },
+                  child:
+                      (avatarUrl.isEmpty ||
+                              (avatarUrl.startsWith('data:image') &&
+                                  StorageService.base64ToImage(avatarUrl) ==
+                                      null))
+                          ? Icon(
+                            Icons.person,
+                            size: 50,
+                            color: Colors.grey.shade400,
+                          )
+                          : null,
                 ),
               ),
 
@@ -342,10 +361,10 @@ class ProfileScreen extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.edit, color: Colors.white, size: 16),
                   onPressed: () {
-                    // Implementasi edit foto profil
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur edit foto profil belum tersedia'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen(),
                       ),
                     );
                   },
@@ -529,9 +548,10 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.person,
             title: 'Edit Profil',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur edit profil belum tersedia'),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EditProfileScreen(),
                 ),
               );
             },
@@ -551,20 +571,7 @@ class ProfileScreen extends StatelessWidget {
           const Divider(height: 1),
 
           // Menu khusus berdasarkan role
-          if (isStudent) ...[
-            _buildMenuItem(
-              icon: Icons.school,
-              title: 'Riwayat Akademik',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Fitur riwayat akademik belum tersedia'),
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 1),
-          ] else ...[
+          if (!isStudent) ...[
             _buildMenuItem(
               icon: Icons.schedule,
               title: 'Jadwal Mengajar',
@@ -604,19 +611,6 @@ class ProfileScreen extends StatelessWidget {
             ),
             const Divider(height: 1),
           ],
-
-          _buildMenuItem(
-            icon: Icons.settings,
-            title: 'Pengaturan',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur pengaturan belum tersedia'),
-                ),
-              );
-            },
-          ),
-          const Divider(height: 1),
           _buildMenuItem(
             icon: Icons.help,
             title: 'Bantuan',

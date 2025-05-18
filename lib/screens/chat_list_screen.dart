@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/chat_service.dart';
 import '../models/lecturer_model.dart'; // Import the proper model
+import '../services/storage_service.dart';
 import 'chat_detail_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -174,11 +175,23 @@ class _ChatListScreenState extends State<ChatListScreen> {
               backgroundImage:
                   chat['partnerPhotoUrl'] != null &&
                           chat['partnerPhotoUrl'].isNotEmpty
-                      ? NetworkImage(chat['partnerPhotoUrl'])
+                      ? chat['partnerPhotoUrl'].startsWith('data:image')
+                          ? MemoryImage(
+                            StorageService.base64ToImage(
+                              chat['partnerPhotoUrl'],
+                            )!,
+                          )
+                          : NetworkImage(chat['partnerPhotoUrl'])
+                              as ImageProvider
                       : null,
               child:
                   chat['partnerPhotoUrl'] == null ||
-                          chat['partnerPhotoUrl'].isEmpty
+                          chat['partnerPhotoUrl'].isEmpty ||
+                          (chat['partnerPhotoUrl'].startsWith('data:image') &&
+                              StorageService.base64ToImage(
+                                    chat['partnerPhotoUrl'],
+                                  ) ==
+                                  null)
                       ? Text(
                         partnerName.isNotEmpty
                             ? partnerName[0].toUpperCase()

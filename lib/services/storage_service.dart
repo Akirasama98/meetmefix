@@ -27,6 +27,27 @@ class StorageService {
     }
   }
 
+  // Konversi foto profil ke Base64 string
+  Future<String> uploadProfilePhoto(File photo) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // Baca file sebagai bytes
+      final List<int> imageBytes = await photo.readAsBytes();
+
+      // Konversi bytes ke Base64 string
+      final String base64Image = base64Encode(imageBytes);
+
+      // Tambahkan prefix untuk menunjukkan bahwa ini adalah gambar JPEG
+      return 'data:image/jpeg;base64,$base64Image';
+    } catch (e) {
+      throw Exception('Failed to encode profile photo: $e');
+    }
+  }
+
   // Tidak perlu menghapus foto karena disimpan di Firestore
   // Method ini tetap ada untuk kompatibilitas
   Future<void> deleteAttendancePhoto(String photoBase64) async {

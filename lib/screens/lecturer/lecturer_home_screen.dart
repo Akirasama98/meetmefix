@@ -5,6 +5,7 @@ import '../../models/meeting_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/appointment_service.dart';
+import '../../services/storage_service.dart';
 
 class LecturerHomeScreen extends StatefulWidget {
   const LecturerHomeScreen({super.key});
@@ -161,20 +162,22 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
               children: [
                 // Logo Universitas
                 Container(
-                  width: size.width * 0.09,
-                  height: size.width * 0.09,
+                  width: size.width * 0.10,
+                  height: size.width * 0.10,
                   decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
+                    shape: BoxShape.rectangle ,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white,
+                        width: 2.0,
+                      ),
+                    ), 
                     color: Colors.white,
                   ),
-                  child: Center(
-                    child: Text(
-                      'U',
-                      style: TextStyle(
-                        color: const Color(0xFF5BBFCB),
-                        fontWeight: FontWeight.bold,
-                        fontSize: size.width * 0.05,
-                      ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/Logo_unej.png',
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
@@ -190,6 +193,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                 ),
               ],
             ),
+            const Divider(height: 25),
             SizedBox(height: size.height * 0.02),
 
             // Foto dan Data Dosen
@@ -199,11 +203,33 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                 // Foto Profil
                 CircleAvatar(
                   radius: size.width * 0.08,
-                  backgroundImage: NetworkImage(
-                    user?.photoUrl ??
-                        'https://randomuser.me/api/portraits/men/1.jpg',
-                  ),
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage:
+                      (user?.photoUrl != null &&
+                              user!.photoUrl!.startsWith('data:image'))
+                          ? MemoryImage(
+                            StorageService.base64ToImage(user.photoUrl!)!,
+                          )
+                          : NetworkImage(
+                                user?.photoUrl ??
+                                    'https://randomuser.me/api/portraits/men/1.jpg',
+                              )
+                              as ImageProvider,
                   onBackgroundImageError: (_, __) {},
+                  child:
+                      (user?.photoUrl == null ||
+                              user!.photoUrl!.isEmpty ||
+                              (user.photoUrl!.startsWith('data:image') &&
+                                  StorageService.base64ToImage(
+                                        user.photoUrl!,
+                                      ) ==
+                                      null))
+                          ? Icon(
+                            Icons.person,
+                            size: size.width * 0.08,
+                            color: Colors.grey.shade400,
+                          )
+                          : null,
                 ),
                 SizedBox(width: size.width * 0.04),
                 // Informasi Dosen

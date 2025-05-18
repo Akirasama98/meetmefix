@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/lecturer_model.dart';
 import '../models/chat_message_model.dart';
 import '../services/chat_service.dart';
+import '../services/storage_service.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final LecturerModel lecturer;
@@ -124,12 +125,23 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundImage: NetworkImage(widget.lecturer.photoUrl),
+              backgroundColor: Colors.grey.shade200,
+              backgroundImage:
+                  widget.lecturer.photoUrl.startsWith('data:image')
+                      ? MemoryImage(
+                        StorageService.base64ToImage(widget.lecturer.photoUrl)!,
+                      )
+                      : NetworkImage(widget.lecturer.photoUrl) as ImageProvider,
               onBackgroundImageError: (_, __) {
                 // Fallback jika gambar tidak dapat dimuat
               },
               child:
-                  widget.lecturer.photoUrl.isEmpty
+                  widget.lecturer.photoUrl.isEmpty ||
+                          (widget.lecturer.photoUrl.startsWith('data:image') &&
+                              StorageService.base64ToImage(
+                                    widget.lecturer.photoUrl,
+                                  ) ==
+                                  null)
                       ? Text(
                         widget.lecturer.name.isNotEmpty
                             ? widget.lecturer.name.substring(0, 1)
@@ -286,12 +298,23 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           if (!isMe)
             CircleAvatar(
               radius: 16,
-              backgroundImage: NetworkImage(widget.lecturer.photoUrl),
+              backgroundColor: Colors.grey.shade200,
+              backgroundImage:
+                  widget.lecturer.photoUrl.startsWith('data:image')
+                      ? MemoryImage(
+                        StorageService.base64ToImage(widget.lecturer.photoUrl)!,
+                      )
+                      : NetworkImage(widget.lecturer.photoUrl) as ImageProvider,
               onBackgroundImageError: (_, __) {
                 // Fallback jika gambar tidak dapat dimuat
               },
               child:
-                  widget.lecturer.photoUrl.isEmpty
+                  widget.lecturer.photoUrl.isEmpty ||
+                          (widget.lecturer.photoUrl.startsWith('data:image') &&
+                              StorageService.base64ToImage(
+                                    widget.lecturer.photoUrl,
+                                  ) ==
+                                  null)
                       ? Text(
                         widget.lecturer.name.isNotEmpty
                             ? widget.lecturer.name.substring(0, 1)

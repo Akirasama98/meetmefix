@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/lecturer_model.dart';
 import '../providers/auth_provider.dart';
 import '../services/chat_service.dart';
+import '../services/storage_service.dart';
 import 'chat_detail_screen.dart';
 
 class LecturerListScreen extends StatefulWidget {
@@ -258,12 +259,23 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundImage: NetworkImage(lecturer.photoUrl),
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage:
+                      lecturer.photoUrl.startsWith('data:image')
+                          ? MemoryImage(
+                            StorageService.base64ToImage(lecturer.photoUrl)!,
+                          )
+                          : NetworkImage(lecturer.photoUrl) as ImageProvider,
                   onBackgroundImageError: (_, __) {
                     // Fallback jika gambar tidak dapat dimuat
                   },
                   child:
-                      lecturer.photoUrl.isEmpty
+                      lecturer.photoUrl.isEmpty ||
+                              (lecturer.photoUrl.startsWith('data:image') &&
+                                  StorageService.base64ToImage(
+                                        lecturer.photoUrl,
+                                      ) ==
+                                      null)
                           ? Text(
                             lecturer.name.substring(0, 1),
                             style: const TextStyle(

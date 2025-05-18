@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/user_model.dart';
 import '../../services/chat_service.dart';
+import '../../services/storage_service.dart';
 import 'lecturer_chat_detail_screen.dart';
 import 'lecturer_student_search_screen.dart';
 
@@ -186,12 +187,22 @@ class _LecturerChatListScreenState extends State<LecturerChatListScreen> {
               children: [
                 CircleAvatar(
                   radius: 28,
+                  backgroundColor: Colors.grey.shade200,
                   backgroundImage:
                       partnerPhotoUrl.isNotEmpty
-                          ? NetworkImage(partnerPhotoUrl)
+                          ? partnerPhotoUrl.startsWith('data:image')
+                              ? MemoryImage(
+                                StorageService.base64ToImage(partnerPhotoUrl)!,
+                              )
+                              : NetworkImage(partnerPhotoUrl) as ImageProvider
                           : null,
                   child:
-                      partnerPhotoUrl.isEmpty
+                      partnerPhotoUrl.isEmpty ||
+                              (partnerPhotoUrl.startsWith('data:image') &&
+                                  StorageService.base64ToImage(
+                                        partnerPhotoUrl,
+                                      ) ==
+                                      null)
                           ? Text(
                             partnerName.isNotEmpty
                                 ? partnerName.substring(0, 1)
