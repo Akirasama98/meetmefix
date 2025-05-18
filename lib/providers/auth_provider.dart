@@ -5,51 +5,37 @@ import '../models/user_model.dart';
 import '../models/firestore_user_model.dart';
 import '../services/firebase_auth_service.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final FirebaseAuthService _authService = FirebaseAuthService();
   UserModel? _userModel;
   bool _isLoading = false;
   String? _error;
+  bool _isInitialized = false;
 
   UserModel? get userModel => _userModel;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAuthenticated => _userModel != null;
   User? get currentUser => _authService.currentUser;
+  bool get isInitialized => _isInitialized;
 
   // Inisialisasi provider
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     _isLoading = true;
     notifyListeners();
 
     try {
-      // Cek apakah ada user yang sudah login
-      User? currentUser = _authService.currentUser;
-      if (currentUser != null) {
-        // Ambil data user dari Firestore
-        final userData = await _authService.getUserData(currentUser.uid);
-        if (userData != null) {
-          // Konversi dari FirestoreUserModel ke UserModel
-          _userModel = UserModel(
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            role: userData.role,
-            nim: userData.nim,
-            nip: userData.nip,
-            department: userData.department,
-            faculty: userData.faculty,
-            phone: userData.phone,
-            photoUrl: userData.photoUrl,
-          );
-        }
-      }
-      _isLoading = false;
-      notifyListeners();
+      // Auto login dihapus untuk menghindari crash
+      // User harus login secara manual setiap kali aplikasi dibuka
     } catch (e) {
       _error = e.toString();
+    } finally {
       _isLoading = false;
+      _isInitialized = true;
       notifyListeners();
     }
   }
@@ -82,6 +68,9 @@ class AuthProvider with ChangeNotifier {
           phone: userData.phone,
           photoUrl: userData.photoUrl,
         );
+        // Dapatkan dan simpan token FCM
+        String? token = await NotificationService.getToken();
+        await NotificationService.saveTokenToDatabase(_userModel!.id, token);
         return true;
       } else {
         _error = 'Data pengguna tidak ditemukan';

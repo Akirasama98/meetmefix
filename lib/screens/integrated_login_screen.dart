@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../main.dart';
-import 'lecturer/lecturer_main_screen.dart';
+import 'lecturer/lecturer_main_screen.dart' as lecturer_main_screen;
 
 class IntegratedLoginScreen extends StatefulWidget {
   const IntegratedLoginScreen({super.key});
@@ -20,10 +20,10 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Inisialisasi AuthProvider
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).initialize();
-    });
+    // Remove this initialization since we're now doing it in the main app
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Provider.of<AuthProvider>(context, listen: false).initialize();
+    // });
   }
 
   @override
@@ -54,7 +54,7 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const LecturerMainScreen(),
+                builder: (context) => const lecturer_main_screen.LecturerMainScreen(),
               ),
             );
           }
