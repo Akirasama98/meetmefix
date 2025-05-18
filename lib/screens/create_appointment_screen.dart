@@ -498,6 +498,23 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
                 ),
               ),
 
+              // Note about time restrictions
+              if (_isToday(_selectedDate))
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Text(
+                    'Catatan: Jam yang sudah lewat tidak dapat dipilih',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+
               // Dropdown content
               if (_isTimeDropdownOpen)
                 Container(
@@ -509,22 +526,48 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
                   child: Column(
                     children:
                         _timeSlots.map((timeSlot) {
+                          // Check if this time slot is in the past for today
+                          bool isPastTimeSlot = false;
+                          if (_isToday(_selectedDate)) {
+                            final timeRange = timeSlot.split(' - ');
+                            final startTime = timeRange[0];
+                            final timeParts = startTime.split(':');
+                            final hour = int.parse(timeParts[0]);
+                            final minute = int.parse(timeParts[1]);
+
+                            final now = DateTime.now();
+                            isPastTimeSlot =
+                                now.hour > hour ||
+                                (now.hour == hour && now.minute > minute);
+                          }
+
                           return InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedTimeSlot = timeSlot;
-                                _isTimeDropdownOpen = false;
-                              });
-                            },
+                            onTap:
+                                isPastTimeSlot
+                                    ? null
+                                    : () {
+                                      setState(() {
+                                        _selectedTimeSlot = timeSlot;
+                                        _isTimeDropdownOpen = false;
+                                      });
+                                    },
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 12,
                               ),
+                              color:
+                                  isPastTimeSlot ? Colors.grey.shade200 : null,
                               child: Text(
                                 timeSlot,
-                                style: const TextStyle(fontSize: 16),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color:
+                                      isPastTimeSlot
+                                          ? Colors.grey.shade400
+                                          : Colors.black,
+                                ),
                               ),
                             ),
                           );
@@ -539,10 +582,8 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
   }
 
   Future<void> _selectDate() async {
-    // Memungkinkan pemilihan tanggal mulai dari 7 hari yang lalu
-    final DateTime firstAllowedDate = DateTime.now().subtract(
-      const Duration(days: 7),
-    );
+    // Hanya memungkinkan pemilihan tanggal mulai dari hari ini
+    final DateTime firstAllowedDate = DateTime.now();
 
     // Jika tanggal yang dipilih sebelumnya lebih awal dari tanggal yang diizinkan,
     // gunakan tanggal yang diizinkan sebagai tanggal awal
@@ -682,6 +723,14 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
         minute,
       );
 
+      // Validate that the appointment time is not in the past
+      final now = DateTime.now();
+      if (appointmentDateTime.isBefore(now)) {
+        throw Exception(
+          'Tidak dapat membuat janji untuk waktu yang sudah lewat',
+        );
+      }
+
       // Create appointment in Firestore
       await _appointmentService.createAppointment(
         lecturerId: _selectedLecturer!['id'] as String,
@@ -708,7 +757,7 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
       setState(() {
         _isLoading = false;
       });
-      
+
       // Show error message
       _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     }
@@ -721,7 +770,12 @@ class _CreateAppointmentScreenState extends State<CreateAppointmentScreen> {
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
+
+  // Helper method to check if a date is today
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
 }
-
-
-

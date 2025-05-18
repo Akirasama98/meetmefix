@@ -457,9 +457,14 @@ class AppointmentService {
         (appointmentData['dateTime'] as Timestamp).toDate();
     final DateTime now = DateTime.now();
 
-    // Boleh check-in 15 menit sebelum waktu janji hingga janji selesai
+    // Boleh check-in 15 menit sebelum waktu janji hingga 1 jam setelah waktu janji
     final DateTime earliestCheckIn = appointmentTime.subtract(
       const Duration(minutes: 15),
+    );
+
+    // Batas akhir check-in adalah 1 jam setelah waktu janji
+    final DateTime latestCheckIn = appointmentTime.add(
+      const Duration(hours: 1),
     );
 
     if (now.isBefore(earliestCheckIn)) {
@@ -468,7 +473,11 @@ class AppointmentService {
       );
     }
 
-    // Tidak perlu validasi batas akhir check-in karena bisa check-in sampai janji selesai
+    if (now.isAfter(latestCheckIn)) {
+      throw Exception(
+        'Batas waktu check-in telah berakhir. Anda hanya dapat check-in hingga 1 jam setelah waktu janji.',
+      );
+    }
 
     // Check if the appointment has location data
     final double? appointmentLatitude =
@@ -504,22 +513,26 @@ class AppointmentService {
         'checkedInLongitude': currentLongitude,
       };
 
-      // Upload attendance photo if provided
-      if (attendancePhoto != null) {
-        try {
-          // Upload photo to Firebase Storage
-          final String photoUrl = await _storageService.uploadAttendancePhoto(
-            attendancePhoto,
-            appointmentId,
-          );
+      // Require attendance photo for check-in
+      if (attendancePhoto == null) {
+        throw Exception(
+          'Foto kehadiran wajib diunggah. Silakan ambil foto terlebih dahulu.',
+        );
+      }
 
-          // Add photo URL and timestamp to update data
-          updateData['attendancePhotoUrl'] = photoUrl;
-          updateData['attendancePhotoTimestamp'] = FieldValue.serverTimestamp();
-        } catch (e) {
-          // If photo upload fails, continue with check-in but log the error
-          print('Failed to upload attendance photo: $e');
-        }
+      try {
+        // Upload photo to Firebase Storage
+        final String photoUrl = await _storageService.uploadAttendancePhoto(
+          attendancePhoto,
+          appointmentId,
+        );
+
+        // Add photo URL and timestamp to update data
+        updateData['attendancePhotoUrl'] = photoUrl;
+        updateData['attendancePhotoTimestamp'] = FieldValue.serverTimestamp();
+      } catch (e) {
+        // If photo upload fails, throw an exception
+        throw Exception('Gagal mengunggah foto kehadiran: $e');
       }
 
       // Update appointment status to 'checked-in'

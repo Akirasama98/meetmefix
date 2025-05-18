@@ -262,7 +262,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                         ),
                         icon: const Icon(Icons.camera_alt),
                         label: const Text(
-                          'Ambil Foto Kehadiran',
+                          'Ambil Foto Kehadiran (Wajib)',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -270,6 +270,18 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                         ),
                       ),
                     ),
+
+                  const SizedBox(height: 8),
+
+                  // Note about check-in time limit
+                  Text(
+                    'Catatan: Batas waktu check-in adalah 1 jam setelah waktu janji.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
 
                   const SizedBox(height: 16),
 
