@@ -154,26 +154,32 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       : null,
             ),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.lecturer.name,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                Text(
-                  widget.lecturer.status == 'online'
-                      ? 'Online'
-                      : 'Terakhir dilihat ${widget.lecturer.lastSeen}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color:
-                        widget.lecturer.status == 'online'
-                            ? Colors.green
-                            : Colors.grey.shade300,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.lecturer.name,
+                    style: const TextStyle(fontSize: 16),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                  Text(
+                    widget.lecturer.status == 'online'
+                        ? 'Online'
+                        : 'Terakhir dilihat ${widget.lecturer.lastSeen}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color:
+                          widget.lecturer.status == 'online'
+                              ? Colors.green
+                              : Colors.grey.shade300,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -339,7 +345,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(message.message, style: const TextStyle(fontSize: 16)),
+                Text(
+                  message.message,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isMe ? Colors.white : Colors.black,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisSize: MainAxisSize.min,

@@ -47,6 +47,8 @@ class _LecturerAppointmentDetailScreenState
             Text(
               widget.appointment.title,
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
             const SizedBox(height: 8),
 
@@ -99,6 +101,7 @@ class _LecturerAppointmentDetailScreenState
             Text(
               widget.appointment.description,
               style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.justify,
             ),
             const SizedBox(height: 24),
 
@@ -170,6 +173,8 @@ class _LecturerAppointmentDetailScreenState
                           child: Text(
                             'Mahasiswa: ${widget.appointment.studentName ?? "Tidak tersedia"}',
                             style: const TextStyle(fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
                         ),
                       ],
@@ -190,6 +195,8 @@ class _LecturerAppointmentDetailScreenState
                             child: Text(
                               'Waktu check-in: ${_formatDateTime(widget.appointment.checkedInAt!)}',
                               style: const TextStyle(fontSize: 16),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
                             ),
                           ),
                         ],

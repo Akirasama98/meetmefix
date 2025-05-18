@@ -301,6 +301,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                         fontSize: 16,
                       ),
                       overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -329,9 +330,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                 children: [
                   const Icon(Icons.person, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
-                  Text(
-                    partnerName,
-                    style: TextStyle(color: Colors.grey.shade700),
+                  Expanded(
+                    child: Text(
+                      partnerName,
+                      style: TextStyle(color: Colors.grey.shade700),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

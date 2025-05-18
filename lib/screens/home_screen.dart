@@ -316,8 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'Min',
     ];
 
-    // Hitung lebar item hari berdasarkan lebar layar
-    final double dayItemWidth = (size.width - 64) / 7;
+    // Lebar item hari diatur langsung di Container
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,125 +425,132 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(height: size.height * 0.02),
 
                 // Hari-hari dalam seminggu dengan tanggal
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(7, (index) {
-                    final DateTime date = _weekStartDate.add(
-                      Duration(days: index),
-                    );
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: List.generate(7, (index) {
+                      final DateTime date = _weekStartDate.add(
+                        Duration(days: index),
+                      );
 
-                    final bool isSelected =
-                        date.year == selectedDay.year &&
-                        date.month == selectedDay.month &&
-                        date.day == selectedDay.day;
+                      final bool isSelected =
+                          date.year == selectedDay.year &&
+                          date.month == selectedDay.month &&
+                          date.day == selectedDay.day;
 
-                    final bool isToday =
-                        date.year == today.year &&
-                        date.month == today.month &&
-                        date.day == today.day;
+                      final bool isToday =
+                          date.year == today.year &&
+                          date.month == today.month &&
+                          date.day == today.day;
 
-                    // Cek apakah ada janji pada tanggal ini
-                    final bool hasAppointment = _meetings.any(
-                      (meeting) =>
-                          meeting.dateTime.year == date.year &&
-                          meeting.dateTime.month == date.month &&
-                          meeting.dateTime.day == date.day,
-                    );
+                      // Cek apakah ada janji pada tanggal ini
+                      final bool hasAppointment = _meetings.any(
+                        (meeting) =>
+                            meeting.dateTime.year == date.year &&
+                            meeting.dateTime.month == date.month &&
+                            meeting.dateTime.day == date.day,
+                      );
 
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedDate = date;
-                        });
-                      },
-                      child: Container(
-                        width: dayItemWidth,
-                        padding: EdgeInsets.symmetric(
-                          vertical: size.width * 0.02,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              isSelected
-                                  ? const Color(0xFFF79762)
-                                  : isToday
-                                  ? const Color(0xFFF79762).withOpacity(0.1)
-                                  : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            // Nama hari
-                            Text(
-                              dayNames[index],
-                              style: TextStyle(
-                                fontSize: size.width * 0.03,
-                                fontWeight: FontWeight.w500,
-                                color:
-                                    isSelected
-                                        ? Colors.white
-                                        : const Color(0xFF5BBFCB),
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedDate = date;
+                          });
+                        },
+                        child: Container(
+                          width: size.width * 0.12,
+                          margin: EdgeInsets.symmetric(horizontal: 4),
+                          padding: EdgeInsets.symmetric(
+                            vertical: size.width * 0.02,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                isSelected
+                                    ? const Color(0xFFF79762)
+                                    : isToday
+                                    ? const Color(0xFFF79762).withOpacity(0.1)
+                                    : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              // Nama hari
+                              Text(
+                                dayNames[index],
+                                style: TextStyle(
+                                  fontSize: size.width * 0.03,
+                                  fontWeight: FontWeight.w500,
+                                  color:
+                                      isSelected
+                                          ? Colors.white
+                                          : const Color(0xFF5BBFCB),
+                                ),
                               ),
-                            ),
-                            SizedBox(height: size.height * 0.008),
-                            // Tanggal
-                            Container(
-                              width: dayItemWidth * 0.75,
-                              height: dayItemWidth * 0.75,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color:
-                                    isSelected
-                                        ? Colors.white.withOpacity(0.3)
-                                        : hasAppointment
-                                        ? const Color(
-                                          0xFF5BBFCB,
-                                        ).withOpacity(0.2)
-                                        : Colors.transparent,
-                                border:
-                                    hasAppointment && !isSelected
-                                        ? Border.all(
-                                          color: const Color(0xFF5BBFCB),
-                                          width: 1,
-                                        )
-                                        : null,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '${date.day}',
-                                  style: TextStyle(
-                                    fontSize: size.width * 0.035,
-                                    fontWeight:
-                                        isSelected || isToday || hasAppointment
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                    color:
-                                        isSelected
-                                            ? Colors.white
-                                            : isToday
-                                            ? const Color(0xFFF79762)
-                                            : hasAppointment
-                                            ? const Color(0xFF5BBFCB)
-                                            : Colors.black87,
+                              SizedBox(height: size.height * 0.008),
+                              // Tanggal
+                              Container(
+                                width: size.width * 0.09,
+                                height: size.width * 0.09,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color:
+                                      isSelected
+                                          ? Colors.white.withOpacity(0.3)
+                                          : hasAppointment
+                                          ? const Color(
+                                            0xFF5BBFCB,
+                                          ).withOpacity(0.2)
+                                          : Colors.transparent,
+                                  border:
+                                      hasAppointment && !isSelected
+                                          ? Border.all(
+                                            color: const Color(0xFF5BBFCB),
+                                            width: 1,
+                                          )
+                                          : null,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${date.day}',
+                                    style: TextStyle(
+                                      fontSize: size.width * 0.035,
+                                      fontWeight:
+                                          isSelected ||
+                                                  isToday ||
+                                                  hasAppointment
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                      color:
+                                          isSelected
+                                              ? Colors.white
+                                              : isToday
+                                              ? const Color(0xFFF79762)
+                                              : hasAppointment
+                                              ? const Color(0xFF5BBFCB)
+                                              : Colors.black87,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            // Indikator janji
-                            if (hasAppointment && !isSelected)
-                              Container(
-                                margin: EdgeInsets.only(top: size.width * 0.01),
-                                width: size.width * 0.01,
-                                height: size.width * 0.01,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF5BBFCB),
+                              // Indikator janji
+                              if (hasAppointment && !isSelected)
+                                Container(
+                                  margin: EdgeInsets.only(
+                                    top: size.width * 0.01,
+                                  ),
+                                  width: size.width * 0.01,
+                                  height: size.width * 0.01,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Color(0xFF5BBFCB),
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
+                  ),
                 ),
               ],
             ),
@@ -743,11 +749,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMeetingCard(MeetingModel meeting, Size size) {
-    // Format tanggal dan waktu
-    final formattedDate = DateFormat(
-      'EEEE, d MMMM yyyy',
-      'id_ID',
-    ).format(meeting.dateTime);
+    // Format waktu
     final formattedTime = DateFormat('HH:mm', 'id_ID').format(meeting.dateTime);
 
     return Card(

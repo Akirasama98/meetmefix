@@ -10,22 +10,29 @@ import 'screens/chat_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/integrated_login_screen.dart';
 import 'screens/lecturer_list_screen.dart';
+import 'screens/lecturer/lecturer_main_screen.dart';
 import 'providers/auth_provider.dart';
-import 'utils/firestore_initializer.dart';
-import 'utils/appointments_initializer.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'services/notification_service.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Handling a background message: ${message.messageId}");
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Inisialisasi data locale untuk format tanggal bahasa Indonesia
+  // Set up background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Initialize notification service
+  await NotificationService.initialize();
+
+  // Initialize date formatting
   await initializeDateFormatting('id_ID', null);
-
-  // Inisialisasi Firestore dengan data sample
-  await FirestoreInitializer().initializeUsers();
-
-  // Inisialisasi data janji temu
-  await AppointmentsInitializer().initializeAppointments();
 
   runApp(const MyApp());
 }
@@ -37,44 +44,93 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Bimbingan Akademik',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF5BBFCB)),
-          useMaterial3: true,
-          // Tambahkan pengaturan untuk text scaling
-          textTheme: Typography.material2018().black.apply(
-            fontSizeFactor: 1.0,
-            fontSizeDelta: 0.0,
-          ),
-        ),
-        // Tambahkan dukungan lokalisasi
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        // Daftar bahasa yang didukung
-        supportedLocales: const [
-          Locale('id', 'ID'), // Indonesia
-          Locale('en', 'US'), // English
-        ],
-        // Gunakan bahasa Indonesia sebagai default
-        locale: const Locale('id', 'ID'),
-        // Tambahkan builder untuk mengontrol text scaling
-        builder: (context, child) {
-          // Pastikan text scaling tidak terlalu besar
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-            child: child!,
-          );
-        },
-        // Define routes
-        routes: {'/lecturer_list': (context) => const LecturerListScreen()},
-        home: const ResponsiveWrapper(child: IntegratedLoginScreen()),
-      ),
+      child: const MyAppContent(),
     );
+  }
+}
+
+class MyAppContent extends StatefulWidget {
+  const MyAppContent({super.key});
+
+  @override
+  State<MyAppContent> createState() => _MyAppContentState();
+}
+
+class _MyAppContentState extends State<MyAppContent> {
+  @override
+  void initState() {
+    super.initState();
+    // Inisialisasi AuthProvider setelah build selesai
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (!authProvider.isInitialized) {
+        authProvider.initialize();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Bimbingan Akademik',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF5BBFCB),
+            ),
+            useMaterial3: true,
+            // Tambahkan pengaturan untuk text scaling
+            textTheme: Typography.material2018().black.apply(
+              fontSizeFactor: 1.0,
+              fontSizeDelta: 0.0,
+            ),
+          ),
+          // Tambahkan dukungan lokalisasi
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          // Daftar bahasa yang didukung
+          supportedLocales: const [
+            Locale('id', 'ID'), // Indonesia
+            Locale('en', 'US'), // English
+          ],
+          // Gunakan bahasa Indonesia sebagai default
+          locale: const Locale('id', 'ID'),
+          // Tambahkan builder untuk mengontrol text scaling
+          builder: (context, child) {
+            // Pastikan text scaling tidak terlalu besar
+            return MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(1.0)),
+              child: child!,
+            );
+          },
+          // Define routes
+          routes: {'/lecturer_list': (context) => const LecturerListScreen()},
+          // Tampilkan layar login saat pertama kali dibuka, tapi tetap bisa navigasi ke home setelah login
+          home:
+              authProvider.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : authProvider.isAuthenticated
+                  ? _getHomeScreenByRole(authProvider)
+                  : const ResponsiveWrapper(child: IntegratedLoginScreen()),
+        );
+      },
+    );
+  }
+
+  // Menentukan layar home berdasarkan role user
+  Widget _getHomeScreenByRole(AuthProvider authProvider) {
+    if (authProvider.userModel?.role == 'lecturer') {
+      return const LecturerMainScreen();
+    } else {
+      return const MainScreen();
+    }
   }
 }
 
@@ -149,3 +205,5 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
+
+// LecturerMainScreen is now imported from screens/lecturer/lecturer_main_screen.dart

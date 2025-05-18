@@ -389,6 +389,8 @@ class ProfileScreen extends StatelessWidget {
               color: Color(0xFF333333),
             ),
             textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
 
           const SizedBox(height: 4),
@@ -401,6 +403,7 @@ class ProfileScreen extends StatelessWidget {
               color: Colors.grey.shade700,
               fontWeight: FontWeight.w500,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
 
           const SizedBox(height: 4),
@@ -409,6 +412,8 @@ class ProfileScreen extends StatelessWidget {
           Text(
             email,
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
 
           const SizedBox(height: 8),
@@ -511,6 +516,7 @@ class ProfileScreen extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -519,6 +525,8 @@ class ProfileScreen extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                 ),
               ],
             ),
@@ -678,7 +686,13 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Icon(icon, color: const Color(0xFF5BBFCB)),
             const SizedBox(width: 16),
-            Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           ],
         ),

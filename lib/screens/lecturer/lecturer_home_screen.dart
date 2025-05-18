@@ -165,13 +165,10 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
                   width: size.width * 0.10,
                   height: size.width * 0.10,
                   decoration: const BoxDecoration(
-                    shape: BoxShape.rectangle ,
+                    shape: BoxShape.rectangle,
                     border: Border(
-                      bottom: BorderSide(
-                        color: Colors.white,
-                        width: 2.0,
-                      ),
-                    ), 
+                      bottom: BorderSide(color: Colors.white, width: 2.0),
+                    ),
                     color: Colors.white,
                   ),
                   child: ClipOval(
@@ -291,9 +288,7 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
       'Min',
     ];
 
-    // Hitung lebar item hari (dengan padding yang lebih kecil)
-    final double dayItemWidth =
-        (size.width - 48) / 7; // Mengurangi lebar untuk mencegah overflow
+    // Lebar item hari diatur langsung di Container
 
     return Card(
       elevation: 2,
@@ -366,107 +361,113 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
             // Hari-hari dalam seminggu dengan tanggal
             SizedBox(
               height: size.height * 0.08, // Tetapkan tinggi tetap
-              child: Row(
-                mainAxisAlignment:
-                    MainAxisAlignment
-                        .spaceEvenly, // Menggunakan spaceEvenly untuk distribusi yang lebih baik
-                children: List.generate(7, (index) {
-                  final DateTime date = _weekStartDate.add(
-                    Duration(days: index),
-                  );
-                  final bool isSelected =
-                      date.year == selectedDay.year &&
-                      date.month == selectedDay.month &&
-                      date.day == selectedDay.day;
-                  final bool isToday =
-                      date.year == today.year &&
-                      date.month == today.month &&
-                      date.day == today.day;
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(7, (index) {
+                    final DateTime date = _weekStartDate.add(
+                      Duration(days: index),
+                    );
+                    final bool isSelected =
+                        date.year == selectedDay.year &&
+                        date.month == selectedDay.month &&
+                        date.day == selectedDay.day;
+                    final bool isToday =
+                        date.year == today.year &&
+                        date.month == today.month &&
+                        date.day == today.day;
 
-                  // Cek apakah ada janji pada tanggal ini
-                  final bool hasAppointment = _meetings.any(
-                    (meeting) =>
-                        meeting.dateTime.year == date.year &&
-                        meeting.dateTime.month == date.month &&
-                        meeting.dateTime.day == date.day,
-                  );
+                    // Cek apakah ada janji pada tanggal ini
+                    final bool hasAppointment = _meetings.any(
+                      (meeting) =>
+                          meeting.dateTime.year == date.year &&
+                          meeting.dateTime.month == date.month &&
+                          meeting.dateTime.day == date.day,
+                    );
 
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedDate = date;
-                      });
-                    },
-                    child: Container(
-                      width: dayItemWidth,
-                      padding: EdgeInsets.symmetric(
-                        vertical: size.width * 0.01,
-                      ), // Mengurangi padding
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected
-                                ? const Color(0xFFF79762)
-                                : isToday
-                                ? const Color(0xFFF79762).withAlpha(25)
-                                : Colors.transparent,
-                        borderRadius: BorderRadius.circular(
-                          8,
-                        ), // Mengurangi radius
-                      ),
-                      child: Column(
-                        mainAxisSize:
-                            MainAxisSize.min, // Menggunakan mainAxisSize.min
-                        mainAxisAlignment:
-                            MainAxisAlignment
-                                .center, // Memastikan konten di tengah
-                        children: [
-                          // Nama hari
-                          Text(
-                            dayNames[index],
-                            style: TextStyle(
-                              fontSize:
-                                  size.width * 0.025, // Mengurangi ukuran font
-                              fontWeight: FontWeight.w500,
-                              color:
-                                  isSelected
-                                      ? Colors.white
-                                      : const Color(0xFF5BBFCB),
-                            ),
-                          ),
-                          SizedBox(
-                            height: size.height * 0.005,
-                          ), // Mengurangi jarak
-                          // Tanggal
-                          Text(
-                            '${date.day}',
-                            style: TextStyle(
-                              fontSize:
-                                  size.width * 0.035, // Mengurangi ukuran font
-                              fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          // Indikator ada janji
-                          if (hasAppointment)
-                            Container(
-                              width:
-                                  size.width *
-                                  0.015, // Mengurangi ukuran indikator
-                              height: size.width * 0.015,
-                              margin: EdgeInsets.only(top: size.height * 0.003),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedDate = date;
+                        });
+                      },
+                      child: Container(
+                        width: size.width * 0.12,
+                        margin: EdgeInsets.symmetric(horizontal: 4),
+                        padding: EdgeInsets.symmetric(
+                          vertical: size.width * 0.01,
+                        ), // Mengurangi padding
+                        decoration: BoxDecoration(
+                          color:
+                              isSelected
+                                  ? const Color(0xFFF79762)
+                                  : isToday
+                                  ? const Color(0xFFF79762).withAlpha(25)
+                                  : Colors.transparent,
+                          borderRadius: BorderRadius.circular(
+                            8,
+                          ), // Mengurangi radius
+                        ),
+                        child: Column(
+                          mainAxisSize:
+                              MainAxisSize.min, // Menggunakan mainAxisSize.min
+                          mainAxisAlignment:
+                              MainAxisAlignment
+                                  .center, // Memastikan konten di tengah
+                          children: [
+                            // Nama hari
+                            Text(
+                              dayNames[index],
+                              style: TextStyle(
+                                fontSize:
+                                    size.width *
+                                    0.025, // Mengurangi ukuran font
+                                fontWeight: FontWeight.w500,
                                 color:
                                     isSelected
                                         ? Colors.white
-                                        : const Color(0xFFF79762),
+                                        : const Color(0xFF5BBFCB),
                               ),
                             ),
-                        ],
+                            SizedBox(
+                              height: size.height * 0.005,
+                            ), // Mengurangi jarak
+                            // Tanggal
+                            Text(
+                              '${date.day}',
+                              style: TextStyle(
+                                fontSize:
+                                    size.width *
+                                    0.035, // Mengurangi ukuran font
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            // Indikator ada janji
+                            if (hasAppointment)
+                              Container(
+                                width:
+                                    size.width *
+                                    0.015, // Mengurangi ukuran indikator
+                                height: size.width * 0.015,
+                                margin: EdgeInsets.only(
+                                  top: size.height * 0.003,
+                                ),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color:
+                                      isSelected
+                                          ? Colors.white
+                                          : const Color(0xFFF79762),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
             ),
           ],

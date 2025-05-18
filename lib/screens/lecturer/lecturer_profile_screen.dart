@@ -21,8 +21,8 @@ class LecturerProfileScreen extends StatelessWidget {
     final String avatarUrl =
         user?.photoUrl ?? 'https://randomuser.me/api/portraits/men/1.jpg';
 
-    // Informasi tambahan dosen
-    final String faculty = 'Fakultas Ilmu Komputer';
+    // Informasi fakultas dosen
+    final String faculty = user?.faculty ?? 'Fakultas Ilmu Komputer';
 
     return Scaffold(
       body: CustomScrollView(
@@ -227,6 +227,8 @@ class LecturerProfileScreen extends StatelessWidget {
               color: Color(0xFF333333),
             ),
             textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
 
           const SizedBox(height: 4),
@@ -239,6 +241,7 @@ class LecturerProfileScreen extends StatelessWidget {
               color: Colors.grey.shade700,
               fontWeight: FontWeight.w500,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
 
           const SizedBox(height: 4),
@@ -247,6 +250,8 @@ class LecturerProfileScreen extends StatelessWidget {
           Text(
             email,
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
 
           const SizedBox(height: 8),
@@ -349,6 +354,7 @@ class LecturerProfileScreen extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -357,6 +363,8 @@ class LecturerProfileScreen extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
                 ),
               ],
             ),
@@ -403,16 +411,6 @@ class LecturerProfileScreen extends StatelessWidget {
                 const SnackBar(
                   content: Text('Fitur notifikasi belum tersedia'),
                 ),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            icon: Icons.help,
-            title: 'Bantuan',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur bantuan belum tersedia')),
               );
             },
           ),

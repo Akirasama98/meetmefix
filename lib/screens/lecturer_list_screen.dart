@@ -313,11 +313,15 @@ class _LecturerListScreenState extends State<LecturerListScreen> {
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${lecturer.title} - ${lecturer.department}',
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
