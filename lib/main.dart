@@ -14,6 +14,7 @@ import 'screens/lecturer/lecturer_main_screen.dart';
 import 'providers/auth_provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notification_service.dart';
+import 'services/schedule_notification_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -28,8 +29,12 @@ void main() async {
   // Set up background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // Initialize notification service
+  // Initialize notification services
   await NotificationService.initialize();
+  await ScheduleNotificationService.initialize();
+
+  // Check and request notification permissions
+  await ScheduleNotificationService.checkAndRequestPermissions();
 
   // Initialize date formatting
   await initializeDateFormatting('id_ID', null);
@@ -168,7 +173,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 0; // Kembali ke tab home (indeks 0)
 
   static final List<Widget> _screens = [
     const HomeScreen(),

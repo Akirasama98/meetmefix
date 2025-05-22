@@ -37,12 +37,17 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      bool success = await authProvider.signIn(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      try {
+        // Panggil signIn dan tunggu hasilnya
+        bool success = await authProvider.signIn(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
 
-      if (mounted) {
+        // Pastikan widget masih terpasang sebelum melanjutkan
+        if (!mounted) return;
+
+        // Jika login berhasil, navigasi ke halaman yang sesuai
         if (success) {
           // Navigasi ke halaman yang sesuai berdasarkan role
           if (authProvider.userModel?.role == 'student') {
@@ -54,21 +59,67 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const lecturer_main_screen.LecturerMainScreen(),
+                builder:
+                    (context) =>
+                        const lecturer_main_screen.LecturerMainScreen(),
               ),
             );
           }
         } else {
-          // Tampilkan pesan error
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authProvider.error ?? 'Login gagal'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          // Jika login gagal, tampilkan pesan error
+          _showErrorMessage(authProvider.error ?? 'Login gagal');
         }
+      } catch (e) {
+        // Tangkap error yang mungkin terjadi selama proses login
+        if (!mounted) return;
+        _showErrorMessage('Terjadi kesalahan: ${e.toString()}');
       }
     }
+  }
+
+  // Method untuk menampilkan pesan error
+  void _showErrorMessage(String message) {
+    // Debug print untuk membantu troubleshooting
+    print('LOGIN ERROR: $message');
+
+    // Pastikan pesan error ditampilkan di UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        // Hapus snackbar yang mungkin sedang ditampilkan
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        // Tampilkan pesan error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -198,32 +249,38 @@ class _IntegratedLoginScreenState extends State<IntegratedLoginScreen> {
   }
 
   Widget _buildLoginButton() {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final bool isLoading = authProvider.isLoading;
+    // Gunakan Consumer untuk memastikan widget diperbarui saat isLoading berubah
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        final bool isLoading = authProvider.isLoading;
 
-    return ElevatedButton(
-      onPressed: isLoading ? null : _login,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF5BBFCB),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        disabledBackgroundColor: const Color(0xFF5BBFCB).withAlpha(150),
-      ),
-      child:
-          isLoading
-              ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-              : const Text(
-                'Masuk',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+        return ElevatedButton(
+          onPressed: isLoading ? null : _login,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF5BBFCB),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            disabledBackgroundColor: const Color(0xFF5BBFCB).withAlpha(150),
+          ),
+          child:
+              isLoading
+                  ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                  : const Text(
+                    'Masuk',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+        );
+      },
     );
   }
 

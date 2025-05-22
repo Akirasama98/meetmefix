@@ -32,7 +32,7 @@ class AuthProvider with ChangeNotifier {
       // Auto login dihapus untuk menghindari crash
       // User harus login secara manual setiap kali aplikasi dibuka
     } catch (e) {
-      _error = e.toString();
+      _error = _handleGenericError(e);
     } finally {
       _isLoading = false;
       _isInitialized = true;
@@ -71,28 +71,67 @@ class AuthProvider with ChangeNotifier {
         // Dapatkan dan simpan token FCM
         String? token = await NotificationService.getToken();
         await NotificationService.saveTokenToDatabase(_userModel!.id, token);
+
+        _isLoading = false;
+        notifyListeners();
         return true;
       } else {
         _error = 'Data pengguna tidak ditemukan';
+        _isLoading = false;
+        notifyListeners();
         return false;
       }
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        _error = 'Email tidak terdaftar';
-      } else if (e.code == 'wrong-password') {
-        _error = 'Password salah';
-      } else if (e.code == 'invalid-email') {
-        _error = 'Format email tidak valid';
-      } else {
-        _error = 'Login gagal: ${e.message}';
+      // Debug print untuk membantu troubleshooting
+      print('FIREBASE AUTH ERROR: ${e.code} - ${e.message}');
+
+      switch (e.code) {
+        case 'user-not-found':
+          _error = 'Email tidak terdaftar. Silakan periksa kembali email Anda.';
+          break;
+        case 'wrong-password':
+          _error = 'Password yang Anda masukkan salah. Silakan coba lagi.';
+          break;
+        case 'invalid-email':
+          _error = 'Format email tidak valid. Masukkan email yang benar.';
+          break;
+        case 'user-disabled':
+          _error =
+              'Akun ini telah dinonaktifkan. Silakan hubungi administrator.';
+          break;
+        case 'too-many-requests':
+          _error =
+              'Terlalu banyak percobaan login yang gagal. Silakan coba lagi nanti.';
+          break;
+        case 'operation-not-allowed':
+          _error =
+              'Login dengan email dan password tidak diizinkan. Hubungi administrator.';
+          break;
+        case 'network-request-failed':
+          _error =
+              'Koneksi internet terputus. Periksa koneksi Anda dan coba lagi.';
+          break;
+        case 'invalid-credential':
+          _error = 'Kredensial yang digunakan tidak valid. Silakan coba lagi.';
+          break;
+        case 'account-exists-with-different-credential':
+          _error = 'Akun sudah ada dengan kredensial yang berbeda.';
+          break;
+        default:
+          _error = 'Login gagal: ${e.message}';
       }
-      return false;
-    } catch (e) {
-      _error = e.toString();
-      return false;
-    } finally {
+
+      // Pastikan isLoading diatur ke false dan UI diperbarui
       _isLoading = false;
       notifyListeners();
+      return false;
+    } catch (e) {
+      _error = _handleGenericError(e);
+
+      // Pastikan isLoading diatur ke false dan UI diperbarui
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
@@ -105,7 +144,7 @@ class AuthProvider with ChangeNotifier {
       await _authService.signOut();
       _userModel = null;
     } catch (e) {
-      _error = e.toString();
+      _error = _handleGenericError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -133,7 +172,7 @@ class AuthProvider with ChangeNotifier {
           )
           .toList();
     } catch (e) {
-      _error = e.toString();
+      _error = _handleGenericError(e);
       return [];
     }
   }
@@ -159,7 +198,7 @@ class AuthProvider with ChangeNotifier {
           )
           .toList();
     } catch (e) {
-      _error = e.toString();
+      _error = _handleGenericError(e);
       return [];
     }
   }
@@ -184,7 +223,7 @@ class AuthProvider with ChangeNotifier {
       }
       return null;
     } catch (e) {
-      _error = e.toString();
+      _error = _handleGenericError(e);
       return null;
     }
   }
@@ -205,7 +244,7 @@ class AuthProvider with ChangeNotifier {
 
       return base64Image;
     } catch (e) {
-      _error = e.toString();
+      _error = _handleGenericError(e);
       return null;
     } finally {
       _isLoading = false;
@@ -246,11 +285,29 @@ class AuthProvider with ChangeNotifier {
 
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = _handleGenericError(e);
       return false;
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // Helper method untuk menangani error umum
+  String _handleGenericError(dynamic error) {
+    if (error is SocketException) {
+      return 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+    } else if (error is FirebaseException) {
+      return 'Terjadi kesalahan: ${error.message ?? "Unknown Firebase Error"}';
+    } else if (error is Exception) {
+      String errorMessage = error.toString();
+      // Hapus "Exception: " dari awal pesan error jika ada
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring('Exception: '.length);
+      }
+      return errorMessage;
+    } else {
+      return 'Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.';
     }
   }
 }

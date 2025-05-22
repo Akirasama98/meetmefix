@@ -12,7 +12,7 @@ class LecturerMainScreen extends StatefulWidget {
 }
 
 class _LecturerMainScreenState extends State<LecturerMainScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 0; // Kembali ke tab home (indeks 0)
 
   static final List<Widget> _screens = [
     const LecturerHomeScreen(),

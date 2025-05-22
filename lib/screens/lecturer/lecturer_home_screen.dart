@@ -6,6 +6,7 @@ import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/appointment_service.dart';
 import '../../services/storage_service.dart';
+import '../../services/schedule_notification_service.dart';
 
 class LecturerHomeScreen extends StatefulWidget {
   const LecturerHomeScreen({super.key});
@@ -34,7 +35,20 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
     // Menghitung tanggal Senin dari minggu saat ini
     _weekStartDate = now.subtract(Duration(days: weekday - 1));
 
+    // Inisialisasi layanan notifikasi jadwal
+    _initializeNotifications();
+
     _fetchMeetings();
+  }
+
+  // Inisialisasi layanan notifikasi
+  Future<void> _initializeNotifications() async {
+    try {
+      // Inisialisasi layanan notifikasi jadwal
+      await ScheduleNotificationService.initialize();
+    } catch (e) {
+      print('Error initializing notifications: $e');
+    }
   }
 
   // Fungsi untuk navigasi ke minggu sebelumnya
@@ -69,6 +83,9 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
             _meetings = appointments;
             _isLoading = false;
           });
+
+          // Jadwalkan notifikasi untuk janji temu yang disetujui
+          _scheduleNotificationsForApprovedMeetings(appointments);
         }
       });
     } catch (e) {
@@ -85,6 +102,59 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  // Jadwalkan notifikasi untuk janji temu yang disetujui
+  Future<void> _scheduleNotificationsForApprovedMeetings(
+    List<MeetingModel> meetings,
+  ) async {
+    try {
+      // Batalkan semua notifikasi yang ada terlebih dahulu
+      await ScheduleNotificationService.cancelAllNotifications();
+
+      // Jadwalkan notifikasi untuk semua janji temu yang disetujui
+      await ScheduleNotificationService.scheduleAppointmentNotifications(
+        meetings,
+      );
+
+      // Tampilkan notifikasi langsung jika ada janji temu hari ini
+      _showTodayAppointmentNotification(meetings);
+    } catch (e) {
+      print('Error scheduling notifications: $e');
+    }
+  }
+
+  // Tampilkan notifikasi langsung jika ada janji temu hari ini
+  void _showTodayAppointmentNotification(List<MeetingModel> meetings) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Filter janji temu hari ini
+    final todayMeetings =
+        meetings.where((meeting) {
+          final meetingDate = DateTime(
+            meeting.dateTime.year,
+            meeting.dateTime.month,
+            meeting.dateTime.day,
+          );
+          return meetingDate.isAtSameMomentAs(today);
+        }).toList();
+
+    // Jika ada janji temu hari ini, tampilkan notifikasi
+    if (todayMeetings.isNotEmpty) {
+      final meeting = todayMeetings.first;
+      final formattedTime = DateFormat(
+        'HH:mm',
+        'id_ID',
+      ).format(meeting.dateTime);
+
+      ScheduleNotificationService.showInstantNotification(
+        title: 'Jadwal Bimbingan Hari Ini',
+        body:
+            'Anda memiliki jadwal bimbingan dengan ${meeting.studentName} untuk "${meeting.title}" pada pukul $formattedTime di ${meeting.location}',
+        payload: meeting.id,
+      );
     }
   }
 

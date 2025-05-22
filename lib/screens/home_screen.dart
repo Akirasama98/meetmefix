@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/meeting_model.dart';
 import '../services/appointment_service.dart';
+import '../services/schedule_notification_service.dart';
 import 'create_appointment_screen.dart';
 import '../services/storage_service.dart';
 
@@ -34,7 +35,85 @@ class _HomeScreenState extends State<HomeScreen> {
     // Menghitung tanggal Senin dari minggu saat ini
     _weekStartDate = now.subtract(Duration(days: weekday - 1));
 
+    // Inisialisasi layanan notifikasi jadwal
+    _initializeNotifications();
+
     _fetchMeetings();
+  }
+
+  // Inisialisasi layanan notifikasi
+  Future<void> _initializeNotifications() async {
+    try {
+      // Inisialisasi layanan notifikasi jadwal
+      await ScheduleNotificationService.initialize();
+
+      // Periksa dan minta izin notifikasi jika belum diberikan
+      await ScheduleNotificationService.checkAndRequestPermissions();
+
+      // Tampilkan dialog untuk mengingatkan pentingnya notifikasi
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showNotificationPermissionDialog();
+      });
+    } catch (e) {
+      print('Error initializing notifications: $e');
+    }
+  }
+
+  // Tampilkan dialog untuk mengingatkan pentingnya notifikasi
+  Future<void> _showNotificationPermissionDialog() async {
+    // Periksa status izin notifikasi terlebih dahulu
+    final bool permissionsEnabled =
+        await ScheduleNotificationService.checkNotificationPermissions();
+
+    // Jika izin sudah diberikan, tidak perlu menampilkan dialog
+    if (permissionsEnabled) {
+      return;
+    }
+
+    // Jika belum mendapatkan izin, tampilkan dialog
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Izin Notifikasi'),
+            content: const Text(
+              'Aplikasi ini memerlukan izin notifikasi untuk mengingatkan Anda tentang jadwal bimbingan yang akan datang. Mohon aktifkan izin notifikasi untuk pengalaman terbaik.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Nanti'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final bool granted =
+                      await ScheduleNotificationService.requestPermissions();
+
+                  // Tampilkan snackbar untuk memberi tahu hasil
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          granted
+                              ? 'Izin notifikasi berhasil diaktifkan!'
+                              : 'Izin notifikasi tidak diaktifkan. Anda mungkin tidak akan menerima pengingat jadwal.',
+                        ),
+                        backgroundColor: granted ? Colors.green : Colors.orange,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Aktifkan Sekarang'),
+              ),
+            ],
+          ),
+    );
   }
 
   // Fungsi untuk navigasi ke minggu sebelumnya
@@ -69,6 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
             _meetings = appointments;
             _isLoading = false;
           });
+
+          // Jadwalkan notifikasi untuk janji temu yang disetujui
+          _scheduleNotificationsForApprovedMeetings(appointments);
         }
       });
     } catch (e) {
@@ -86,6 +168,59 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  // Jadwalkan notifikasi untuk janji temu yang disetujui
+  Future<void> _scheduleNotificationsForApprovedMeetings(
+    List<MeetingModel> meetings,
+  ) async {
+    try {
+      // Batalkan semua notifikasi yang ada terlebih dahulu
+      await ScheduleNotificationService.cancelAllNotifications();
+
+      // Jadwalkan notifikasi untuk semua janji temu yang disetujui
+      await ScheduleNotificationService.scheduleAppointmentNotifications(
+        meetings,
+      );
+
+      // Tampilkan notifikasi langsung jika ada janji temu hari ini
+      _showTodayAppointmentNotification(meetings);
+    } catch (e) {
+      print('Error scheduling notifications: $e');
+    }
+  }
+
+  // Tampilkan notifikasi langsung jika ada janji temu hari ini
+  void _showTodayAppointmentNotification(List<MeetingModel> meetings) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Filter janji temu hari ini
+    final todayMeetings =
+        meetings.where((meeting) {
+          final meetingDate = DateTime(
+            meeting.dateTime.year,
+            meeting.dateTime.month,
+            meeting.dateTime.day,
+          );
+          return meetingDate.isAtSameMomentAs(today);
+        }).toList();
+
+    // Jika ada janji temu hari ini, tampilkan notifikasi
+    if (todayMeetings.isNotEmpty) {
+      final meeting = todayMeetings.first;
+      final formattedTime = DateFormat(
+        'HH:mm',
+        'id_ID',
+      ).format(meeting.dateTime);
+
+      ScheduleNotificationService.showInstantNotification(
+        title: 'Jadwal Bimbingan Hari Ini',
+        body:
+            'Anda memiliki jadwal bimbingan "${meeting.title}" pada pukul $formattedTime di ${meeting.location}',
+        payload: meeting.id,
+      );
     }
   }
 
@@ -224,6 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Universitas Jember',
                   style: TextStyle(
                     color: Colors.white,
+                    fontFamily: 'times new roman',
                     fontWeight: FontWeight.bold,
                     fontSize: size.width * 0.04, // Font responsif
                   ),
