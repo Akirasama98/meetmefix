@@ -259,6 +259,10 @@ class _LecturerAppointmentsScreenState extends State<LecturerAppointmentsScreen>
         statusColor = Colors.purple;
         statusText = 'Sudah Bimbingan';
         break;
+      case 'late':
+        statusColor = Colors.red.shade700;
+        statusText = 'Terlambat';
+        break;
       default:
         statusColor = Colors.grey;
         statusText = 'Tidak diketahui';

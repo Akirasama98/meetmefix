@@ -8,7 +8,8 @@ class MeetingModel {
   final String location;
   final String lecturerId;
   final String studentId;
-  String status; // 'pending', 'approved', 'rejected', 'completed', 'checked-in'
+  String
+  status; // 'pending', 'approved', 'rejected', 'completed', 'checked-in', 'late'
   final String? lecturerName; // Nama dosen
   final String? studentName; // Nama mahasiswa
   final DateTime? createdAt; // Waktu pembuatan

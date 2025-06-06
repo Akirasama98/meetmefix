@@ -352,6 +352,10 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         statusColor = Colors.purple;
         statusText = 'Sudah Bimbingan';
         break;
+      case 'late':
+        statusColor = Colors.red.shade700;
+        statusText = 'Terlambat';
+        break;
       default:
         statusColor = Colors.grey;
         statusText = 'Tidak diketahui';

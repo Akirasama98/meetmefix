@@ -776,6 +776,8 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
         return Colors.blue;
       case 'checked-in':
         return Colors.purple;
+      case 'late':
+        return Colors.red.shade700;
       default:
         return Colors.grey;
     }
@@ -794,6 +796,8 @@ class _LecturerHomeScreenState extends State<LecturerHomeScreen> {
         return 'Selesai';
       case 'checked-in':
         return 'Hadir';
+      case 'late':
+        return 'Terlambat';
       default:
         return 'Tidak diketahui';
     }

@@ -402,18 +402,6 @@ class LecturerProfileScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            icon: Icons.notifications,
-            title: 'Notifikasi',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur notifikasi belum tersedia'),
-                ),
-              );
-            },
-          ),
         ],
       ),
     );

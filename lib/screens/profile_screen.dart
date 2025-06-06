@@ -5,7 +5,6 @@ import '../providers/auth_provider.dart';
 import '../screens/integrated_login_screen.dart';
 import 'edit_profile_screen.dart';
 import '../services/storage_service.dart';
-import '../services/schedule_notification_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -277,11 +276,6 @@ class ProfileScreen extends StatelessWidget {
 
                 // Settings and preferences
                 _buildProfileMenus(context, isStudent),
-
-                const SizedBox(height: 20),
-
-                // Tombol Uji Notifikasi
-                _buildTestNotificationButton(context),
 
                 const SizedBox(height: 20),
 
@@ -570,14 +564,7 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-          const Divider(height: 1),
-          _buildMenuItem(
-            icon: Icons.notifications,
-            title: 'Uji Notifikasi',
-            onTap: () {
-              _showTestNotificationDialog(context);
-            },
-          ),
+
           const Divider(height: 1),
 
           // Menu khusus berdasarkan role
@@ -702,29 +689,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTestNotificationButton(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () {
-          _showTestNotificationDialog(context);
-        },
-        icon: const Icon(Icons.notifications_active),
-        label: const Text('Uji Notifikasi'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF5BBFCB),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 2,
-        ),
-      ),
-    );
-  }
-
   Widget _buildLogoutButton(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -823,91 +787,5 @@ class ProfileScreen extends StatelessWidget {
         );
       }
     }
-  }
-
-  // Dialog untuk menguji notifikasi
-  void _showTestNotificationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: const Row(
-              children: [
-                Icon(Icons.notifications_active, color: Color(0xFF5BBFCB)),
-                SizedBox(width: 8),
-                Text('Uji Notifikasi'),
-              ],
-            ),
-            content: const Text('Pilih jenis notifikasi yang ingin Anda uji:'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.of(dialogContext).pop();
-
-                  // Kirim notifikasi langsung
-                  await ScheduleNotificationService.showInstantNotification(
-                    title: 'Notifikasi Pengujian',
-                    body:
-                        'Ini adalah notifikasi pengujian. Jika Anda melihat ini, berarti notifikasi berfungsi dengan baik!',
-                  );
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Notifikasi pengujian telah dikirim'),
-                        backgroundColor: Color(0xFF5BBFCB),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5BBFCB),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Notifikasi Langsung'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.of(dialogContext).pop();
-
-                  // Kirim notifikasi terjadwal (5 detik dari sekarang)
-                  final DateTime scheduledTime = DateTime.now().add(
-                    const Duration(seconds: 5),
-                  );
-
-                  await ScheduleNotificationService.scheduleNotification(
-                    title: 'Notifikasi Terjadwal',
-                    body:
-                        'Ini adalah notifikasi terjadwal (5 detik). Jika Anda melihat ini, berarti notifikasi terjadwal berfungsi dengan baik!',
-                    scheduledTime: scheduledTime,
-                  );
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Notifikasi terjadwal akan muncul dalam 5 detik',
-                        ),
-                        backgroundColor: Color(0xFF5BBFCB),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Notifikasi Terjadwal (5 detik)'),
-              ),
-            ],
-          ),
-    );
   }
 }

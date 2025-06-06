@@ -125,6 +125,15 @@ class AppointmentService {
                     .get();
             snapshots.add(completedSnapshot);
 
+            // Ambil janji temu dengan status late
+            final lateSnapshot =
+                await _firestore
+                    .collection('appointments')
+                    .where('studentId', isEqualTo: user.uid)
+                    .where('status', isEqualTo: 'late')
+                    .get();
+            snapshots.add(lateSnapshot);
+
             // Ambil janji temu dengan status rejected
             final rejectedSnapshot =
                 await _firestore
@@ -142,6 +151,15 @@ class AppointmentService {
                     .where('status', isEqualTo: 'completed')
                     .get();
             snapshots.add(completedSnapshot);
+
+            // Ambil janji temu dengan status late
+            final lateSnapshot =
+                await _firestore
+                    .collection('appointments')
+                    .where('lecturerId', isEqualTo: user.uid)
+                    .where('status', isEqualTo: 'late')
+                    .get();
+            snapshots.add(lateSnapshot);
 
             // Ambil janji temu dengan status rejected
             final rejectedSnapshot =

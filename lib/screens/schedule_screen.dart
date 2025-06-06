@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/appointment_service.dart';
+import '../services/schedule_status_service.dart';
 import '../models/meeting_model.dart';
 import 'create_appointment_screen.dart';
 import 'appointment_detail_screen.dart';
@@ -23,11 +24,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   List<MeetingModel> _pendingAppointments = [];
   List<MeetingModel> _approvedAppointments = [];
   List<MeetingModel> _historyAppointments = [];
+  List<MeetingModel> _lateAppointments = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _loadAppointments();
   }
 
@@ -93,6 +95,17 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           });
         }
       });
+
+      // Ambil janji temu dengan status late
+      _appointmentService.getAppointmentsByStatus('late').listen((
+        appointments,
+      ) {
+        if (mounted) {
+          setState(() {
+            _lateAppointments = appointments;
+          });
+        }
+      });
     } catch (e) {
       print('Error loading appointments: $e');
       setState(() {
@@ -116,14 +129,20 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             Tab(text: 'Semua'),
             Tab(text: 'Menunggu'),
             Tab(text: 'Disetujui'),
+            Tab(text: 'Terlambat'),
             Tab(text: 'Riwayat'),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadAppointments,
-            tooltip: 'Refresh',
+            onPressed: () async {
+              // Force check status terlebih dahulu
+              await ScheduleStatusService.forceCheckAllAppointments();
+              // Kemudian refresh data
+              _loadAppointments();
+            },
+            tooltip: 'Refresh & Check Status',
           ),
         ],
       ),
@@ -136,6 +155,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   _buildAppointmentList(_allAppointments),
                   _buildAppointmentList(_pendingAppointments),
                   _buildAppointmentList(_approvedAppointments),
+                  _buildAppointmentList(_lateAppointments),
                   _buildAppointmentList(_historyAppointments),
                 ],
               ),
@@ -258,6 +278,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
       case 'checked-in':
         statusColor = Colors.purple;
         statusText = 'Sudah Check-in';
+        break;
+      case 'late':
+        statusColor = Colors.red.shade700;
+        statusText = 'Terlambat';
         break;
       default:
         statusColor = Colors.grey;
